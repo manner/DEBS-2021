@@ -47,7 +47,7 @@ public class ChallengerClient {
         Locations locations = getLocations(client, benchmark);
     }
 
-    private static Locations getLocations(ChallengerClient client, Benchmark benchmark) {
+    public static Locations getLocations(ChallengerClient client, Benchmark benchmark) {
         Locations locations;
         String locationFileName = "./locations.ser";
         if (new File(locationFileName).isFile()) {
@@ -59,7 +59,7 @@ public class ChallengerClient {
         return locations;
     }
 
-    private static Locations readLocationsFromFile(String locationFileName) {
+    public static Locations readLocationsFromFile(String locationFileName) {
         Locations locations = null;
         try (
                 FileInputStream streamIn = new FileInputStream(locationFileName);
