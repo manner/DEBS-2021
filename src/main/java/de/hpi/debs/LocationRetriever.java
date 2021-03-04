@@ -2,7 +2,6 @@ package de.hpi.debs;
 
 import de.tum.i13.bandency.Location;
 import de.tum.i13.bandency.Locations;
-import de.tum.i13.bandency.Point;
 import org.geotools.data.DataStore;
 import org.geotools.data.collection.SpatialIndexFeatureCollection;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
@@ -18,31 +17,27 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Envelope;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.MultiPolygon;
+import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.Polygon;
-import org.locationtech.jts.linearref.LinearLocation;
-import org.locationtech.jts.linearref.LocationIndexedLine;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.spatial.BBOX;
-import org.opengis.geometry.BoundingBox;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 public class LocationRetriever {
 
     private static final FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
+    private final GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
     private final SpatialIndexFeatureCollection index;
-    private SimpleFeature lastMatched;
     private DefaultFeatureCollection featureCollection;
 
     public LocationRetriever(Locations locations) throws IOException {
@@ -50,7 +45,6 @@ public class LocationRetriever {
 
         index = new SpatialIndexFeatureCollection(featureCollection.getSchema());
         index.addAll(featureCollection.collection());
-
     }
 
     private static Function<Location, SimpleFeature>
@@ -58,7 +52,7 @@ public class LocationRetriever {
         return location -> {
             List<de.tum.i13.bandency.Polygon> polygonList = location.getPolygonsList();
             Polygon[] polygons = new Polygon[polygonList.size()];
-            for (int i = 0; i < polygonList.size(); i++ ) {
+            for (int i = 0; i < polygonList.size(); i++) {
                 Coordinate[] coordinates = getCoordinates(polygonList.get(i).getPointsList());
                 polygons[i] = geometryFactory.createPolygon(coordinates);
             }
@@ -92,9 +86,7 @@ public class LocationRetriever {
         featureTypeBuilder.add("plz", String.class);
         SimpleFeatureType CITY = featureTypeBuilder.buildFeatureType();
 
-        SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(CITY);
         featureCollection = new DefaultFeatureCollection();
-        GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
 
         locations.getLocationsList().stream()
                 .map(toFeature(CITY, geometryFactory))
@@ -117,34 +109,24 @@ public class LocationRetriever {
         final double MAX_SEARCH_DISTANCE = index.getBounds().getSpan(0);
         ReferencedEnvelope search = new ReferencedEnvelope(new Envelope(coordinate),
                 index.getSchema().getCoordinateReferenceSystem());
-        search.expandBy(MAX_SEARCH_DISTANCE);
-        BBOX bbox = ff.bbox(ff.property(index.getSchema().getGeometryDescriptor().getName()), (BoundingBox) search);
+        search.expandBy(0.001);
+        BBOX bbox = ff.bbox(ff.property(index.getSchema().getGeometryDescriptor().getName()), search);
         SimpleFeatureCollection candidates = index.subCollection(bbox);
 
-        double minDist = MAX_SEARCH_DISTANCE + 1.0e-6;
-        Coordinate minDistPoint = null;
-        try (SimpleFeatureIterator itr = candidates.features()) {
-            while (itr.hasNext()) {
-                SimpleFeature feature = itr.next();
-                LocationIndexedLine line = new LocationIndexedLine(((MultiPolygon) feature.getDefaultGeometry()).getBoundary());
-                LinearLocation here = line.project(coordinate);
-                Coordinate point = line.extractPoint(here);
-                double dist = point.distance(coordinate);
-                if (dist < minDist) {
-                    minDist = dist;
-                    minDistPoint = point;
-                    lastMatched = feature;
-                }
+        Point point = geometryFactory.createPoint(coordinate);
+        SimpleFeatureIterator itr = candidates.features();
+        while (itr.hasNext()) {
+            SimpleFeature feature = itr.next();
+            MultiPolygon area = (MultiPolygon) feature.getDefaultGeometry();
+            if (area.contains(point)) {
+                return Optional.of((String) feature.getAttribute("city"));
             }
         }
-        if (minDistPoint == null) {
-            return Optional.empty();
-        } else {
-            return Optional.of((String) lastMatched.getAttribute("city"));
-        }
+
+        return Optional.empty();
     }
 
-    public String findCityForLocation(Point point) {
+    public String findCityForLocation(de.tum.i13.bandency.Point point) {
         return findNearestPolygon(pointToCoordinate(point))
                 .orElse("Point not found");
     }
