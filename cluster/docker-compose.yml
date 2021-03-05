@@ -6,6 +6,8 @@ services:
     command: /docker-entrypoint.sh jobmanager
     env_file:
       - flink.env
+    environment:
+      - 'FLINK_PROPERTIES=jobmanager.rpc.address: jobmanager'
     networks:
       - flink-network
     ports:
