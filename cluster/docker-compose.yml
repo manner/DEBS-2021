@@ -4,8 +4,6 @@ services:
     image: flink:scala_2.12-java11
     container_name: jobmanager
     command: /docker-entrypoint.sh jobmanager
-    env_file:
-      - flink.env
     environment:
       - 'FLINK_PROPERTIES=jobmanager.rpc.address: jobmanager'
     networks:
