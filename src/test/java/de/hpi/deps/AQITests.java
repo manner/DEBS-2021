@@ -30,4 +30,17 @@ public class AQITests {
         assertEquals(50, AQI.getAQI10(54.99f));
         assertEquals(51, AQI.getAQI10(55.0f));
     }
+
+    @Test
+    public void testCornerCases() {
+        assertEquals(0, AQI.getAQI25(0f));
+        assertEquals(0, AQI.getAQI10(0f));
+
+        assertEquals(500, AQI.getAQI25(500.4f));
+        assertEquals(500, AQI.getAQI10(604f));
+
+        assertEquals(500, AQI.getAQI25(1000f));
+        assertEquals(500, AQI.getAQI10(1000f));
+
+    }
 }

@@ -56,7 +56,6 @@ public class AQI {
     private static final NavigableMap<Float, Integer> AQI_10 = new TreeMap<>(AQI_10_Map);
     private static final NavigableMap<Float, Integer> AQI_25 = new TreeMap<>(AQI_25_Map);
 
-
     public static int getAQI25(float value) {
         float truncatedValue = (float) Math.floor(value * 10) / 10;
         return calculateAQI(truncatedValue, AQI_25);
@@ -68,6 +67,11 @@ public class AQI {
     }
 
     private static int calculateAQI(float truncatedValue, NavigableMap<Float, Integer> map) {
+        if (truncatedValue <= map.firstKey()) {
+            return map.firstEntry().getValue();
+        } else if (truncatedValue > map.lastKey()) {
+            return map.lastEntry().getValue();
+        }
         float BP_high = map.ceilingKey(truncatedValue);
         float BP_low = map.lowerKey(truncatedValue);
         int I_high = map.ceilingEntry(truncatedValue).getValue();
