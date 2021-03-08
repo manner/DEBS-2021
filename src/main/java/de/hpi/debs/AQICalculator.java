@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
-public class AQI {
+public class AQICalculator {
 
     private static final Map<Float, Integer> AQI_25_Map = new HashMap<Float, Integer>() {{
         put(0f, 0);

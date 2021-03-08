@@ -21,7 +21,7 @@ public class AverageAQIAggregate implements AggregateFunction<MeasurementOwn, Tu
     public Integer getResult(Tuple3<Float, Float, Integer> accumulator) {
         float pm25Average = accumulator.f0 / accumulator.f2;
         float pm10Average = accumulator.f1 / accumulator.f2;
-        return AQI.getAQI(pm25Average, pm10Average);
+        return AQICalculator.getAQI(pm25Average, pm10Average);
     }
 
     @Override
