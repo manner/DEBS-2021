@@ -1,7 +1,6 @@
 package de.hpi.debs;
 
-import org.apache.flink.api.common.functions.AggregateFunction;
-import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.WindowedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -26,7 +25,6 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class ChallengerClient {
 
@@ -51,7 +49,7 @@ public class ChallengerClient {
         ChallengerClient client = new ChallengerClient("challenge.msrg.in.tum.de", 5023);
         BenchmarkConfiguration configuration = BenchmarkConfiguration.newBuilder()
                 .setToken(System.getenv("DEBS_API_KEY"))
-                .setBatchSize(100)
+                .setBatchSize(1000)
                 .setBenchmarkName("Testrun " + new Date().toString())
                 .setBenchmarkType("test")
                 .addQueries(BenchmarkConfiguration.Query.Q1)
@@ -67,20 +65,25 @@ public class ChallengerClient {
 
         List<MeasurementOwn> measurements = new ArrayList<>();
         client.blockingStub.startBenchmark(benchmark);
-        
+
         Batch batch;
-        int count2 = 0;
-        for (int i = 0; i < 20; i++) {
+
+        for (int i = 0; i < 2; i++) {
             batch = client.blockingStub.nextBatch(benchmark);
-            count2 += batch.getCurrentCount();
             batch.getCurrentList().stream()
                     .map(MeasurementOwn::fromMeasurement)
                     .forEach(measurements::add);
+            MeasurementOwn m = measurements.get(batch.getCurrentCount() - 1);
+            m.setWatermark(true);
+            measurements.set(batch.getCurrentCount() - 1, m);
         }
-        DataStream<MeasurementOwn> measurementStream = env.fromCollection(measurements);
-        AtomicInteger count = new AtomicInteger();
-        measurementStream.map(m -> count.getAndIncrement());
-        System.out.println(count2);
+
+        WatermarkStrategy<MeasurementOwn> watermarkStrategy = WatermarkStrategy
+                .forGenerator((context) -> new MeasurementWatermarkGenerator())
+                .withTimestampAssigner(((element, timestamp) -> element.getTimestamp()));
+
+        DataStream<MeasurementOwn> measurementStream = env.fromCollection(measurements)
+                .assignTimestampsAndWatermarks(watermarkStrategy);
 
         DataStream<MeasurementOwn> cities = measurementStream.map(
                 value -> {
@@ -93,6 +96,10 @@ public class ChallengerClient {
                 .keyBy(m -> m.getCity().get())
                 .window(SlidingEventTimeWindows.of(Time.hours(24), Time.minutes(5)));
 
+        DataStream<Integer> aqiStream = measurementByCity
+                .aggregate(new AverageAQIAggregate());
+
+        aqiStream.print();
         DiscardingSink<MeasurementOwn> sink = new DiscardingSink<>();
         cities.addSink(sink);
 
