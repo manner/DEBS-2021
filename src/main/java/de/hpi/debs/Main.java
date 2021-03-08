@@ -1,5 +1,11 @@
 package de.hpi.debs;
 
+import de.tum.i13.bandency.Batch;
+import de.tum.i13.bandency.Benchmark;
+import de.tum.i13.bandency.BenchmarkConfiguration;
+import de.tum.i13.bandency.ChallengerGrpc;
+import de.tum.i13.bandency.Locations;
+
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.WindowedStream;
@@ -9,73 +15,78 @@ import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindow
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 
-import de.tum.i13.bandency.Batch;
-import de.tum.i13.bandency.Benchmark;
-import de.tum.i13.bandency.BenchmarkConfiguration;
-import de.tum.i13.bandency.ChallengerGrpc;
-import de.tum.i13.bandency.Locations;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class ChallengerClient {
+public class Main {
 
     private static LocationRetriever locationRetriever;
-    private final ChallengerGrpc.ChallengerStub asyncStub;
-    private final ChallengerGrpc.ChallengerBlockingStub blockingStub;
 
+    public static void main(String[] args)  throws Exception { //we should handle the exception in code
 
-    public ChallengerClient(String host, int port) {
-        this(ManagedChannelBuilder.forAddress(host, port).usePlaintext());
-    }
-
-    public ChallengerClient(ManagedChannelBuilder<?> channelBuilder) {
-        ManagedChannel channel = channelBuilder
-                .maxInboundMessageSize(100 * 1024 * 1024)
+        ManagedChannel channel = ManagedChannelBuilder
+                .forAddress("challenge.msrg.in.tum.de", 5023)
+                .usePlaintext()
                 .build();
-        blockingStub = ChallengerGrpc.newBlockingStub(channel);
-        asyncStub = ChallengerGrpc.newStub(channel);
-    }
 
-    public static void main(String[] args) throws Exception {
-        ChallengerClient client = new ChallengerClient("challenge.msrg.in.tum.de", 5023);
-        BenchmarkConfiguration configuration = BenchmarkConfiguration.newBuilder()
-                .setToken(System.getenv("DEBS_API_KEY"))
-                .setBatchSize(1000)
+
+        var challengeClient = ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
+                .withMaxInboundMessageSize(100 * 1024 * 1024)
+                .withMaxOutboundMessageSize(100 * 1024 * 1024);
+
+        BenchmarkConfiguration bc = BenchmarkConfiguration.newBuilder()
                 .setBenchmarkName("Testrun " + new Date().toString())
-                .setBenchmarkType("test")
+                .setBatchSize(1000)
                 .addQueries(BenchmarkConfiguration.Query.Q1)
+                .addQueries(BenchmarkConfiguration.Query.Q2)
+                .setToken("kfhlzrortvxxgywlghvtmmohhagkfzkv") //go to: https://challenge.msrg.in.tum.de/profile/
+                .setBenchmarkType("test") //Benchmark Type for testing
                 .build();
-
-        Benchmark benchmark = client.blockingStub.createNewBenchmark(configuration);
-
-        Locations locations = getLocations(client, benchmark);
-        locationRetriever = new LocationRetriever(locations);
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-
         List<MeasurementOwn> measurements = new ArrayList<>();
-        client.blockingStub.startBenchmark(benchmark);
 
-        Batch batch;
+        //Create a new Benchmark
+        Benchmark newBenchmark = challengeClient.createNewBenchmark(bc);
 
-        for (int i = 0; i < 2; i++) {
-            batch = client.blockingStub.nextBatch(benchmark);
+        //Get the locations
+        Locations locations = getLocations(challengeClient, newBenchmark);
+        locationRetriever = new LocationRetriever(locations);
+        System.out.println(locations);
+
+
+        //Start the benchmark
+        System.out.println(challengeClient.startBenchmark(newBenchmark));
+
+        //Process the events
+        int cnt = 0;
+        while(true) {
+            Batch batch = challengeClient.nextBatch(newBenchmark);
+            if (batch.getLast()) { //Stop when we get the last batch
+                System.out.println("Received last batch, finished!");
+                break;
+            }
+
+            //process the batch of events we have
             batch.getCurrentList().stream()
                     .map(MeasurementOwn::fromMeasurement)
                     .forEach(measurements::add);
             MeasurementOwn m = measurements.get(batch.getCurrentCount() - 1);
             m.setWatermark(true);
             measurements.set(batch.getCurrentCount() - 1, m);
+
+            System.out.println("Processed batch #" + cnt);
+            ++cnt;
+
+            if(cnt > 2) { //for testing you can
+                break;
+            }
         }
 
         WatermarkStrategy<MeasurementOwn> watermarkStrategy = WatermarkStrategy
@@ -103,17 +114,17 @@ public class ChallengerClient {
         DiscardingSink<MeasurementOwn> sink = new DiscardingSink<>();
         cities.addSink(sink);
 
-        client.blockingStub.endBenchmark(benchmark);
-        env.execute("benchmark");
+        System.out.println(challengeClient.endBenchmark(newBenchmark));
+        System.out.println("ended Benchmark");
     }
 
-    public static Locations getLocations(ChallengerClient client, Benchmark benchmark) {
+    public static Locations getLocations(ChallengerGrpc.ChallengerBlockingStub client, Benchmark benchmark) {
         Locations locations;
         String locationFileName = "./locations.ser";
         if (new File(locationFileName).isFile()) {
             locations = readLocationsFromFile(locationFileName);
         } else {
-            locations = client.blockingStub.getLocations(benchmark);
+            locations = client.getLocations(benchmark);
             saveLocationsToFile(locationFileName, locations);
         }
         return locations;
@@ -123,7 +134,7 @@ public class ChallengerClient {
         Locations locations = null;
         try (
                 FileInputStream streamIn = new FileInputStream(locationFileName);
-                ObjectInputStream objectinputstream = new ObjectInputStream(streamIn);
+                ObjectInputStream objectinputstream = new ObjectInputStream(streamIn)
         ) {
             locations = (Locations) objectinputstream.readObject();
         } catch (Exception e) {
@@ -135,7 +146,7 @@ public class ChallengerClient {
     private static void saveLocationsToFile(String locationFileName, Locations locations) {
         try (
                 FileOutputStream fout = new FileOutputStream(locationFileName, true);
-                ObjectOutputStream oos = new ObjectOutputStream(fout);
+                ObjectOutputStream oos = new ObjectOutputStream(fout)
         ) {
             oos.writeObject(locations);
         } catch (Exception ex) {

@@ -1,8 +1,5 @@
-package de.hpi.deps;
+package de.hpi.debs;
 
-import de.hpi.debs.ChallengerClient;
-import de.hpi.debs.LocationRetriever;
-import de.hpi.debs.PointOwn;
 import de.tum.i13.bandency.Locations;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +14,7 @@ public class LocationRetrieverTests {
 
     @BeforeEach
     public void setupLocationRetriever() throws IOException {
-        Locations locations = ChallengerClient.readLocationsFromFile("./locations.ser");
+        Locations locations = Main.readLocationsFromFile("./locations.ser");
         locationRetriever = new LocationRetriever(locations);
     }
 

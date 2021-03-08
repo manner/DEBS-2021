@@ -106,7 +106,7 @@ public class LocationRetriever {
     }
 
     public Optional<String> findNearestPolygon(Coordinate coordinate) {
-        final double MAX_SEARCH_DISTANCE = index.getBounds().getSpan(0);
+        //final double MAX_SEARCH_DISTANCE = index.getBounds().getSpan(0);
         ReferencedEnvelope search = new ReferencedEnvelope(new Envelope(coordinate),
                 index.getSchema().getCoordinateReferenceSystem());
         search.expandBy(0.001);

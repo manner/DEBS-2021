@@ -52,10 +52,10 @@ gradle-app.setting
 *.iws
 
 ### project files
-.ser
-.dbf
-.prj
-.shp
-.shx
+*.ser
+*.dbf
+*.prj
+*.shp
+*.shx
 out/
 target/
