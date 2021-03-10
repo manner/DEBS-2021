@@ -126,13 +126,12 @@ public class LocationRetriever {
         return Optional.empty();
     }
 
-    public String findCityForLocation(de.tum.i13.bandency.Point point) {
-        return findNearestPolygon(pointToCoordinate(point))
-                .orElse("Point not found");
+    public Optional<String> findCityForLocation(de.tum.i13.bandency.Point point) {
+        return findNearestPolygon(pointToCoordinate(point));
+
     }
 
-    public String findCityForLocation(PointOwn point) {
-        return findNearestPolygon(new Coordinate(point.getLatitude(), point.getLongitude()))
-                .orElse("Point not found");
+    public Optional<String> findCityForLocation(PointOwn point) {
+        return findNearestPolygon(new Coordinate(point.getLatitude(), point.getLongitude()));
     }
 }
