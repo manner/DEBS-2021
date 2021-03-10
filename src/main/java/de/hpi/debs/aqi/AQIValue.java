@@ -1,4 +1,6 @@
-package de.hpi.debs;
+package de.hpi.debs.aqi;
+
+import java.util.Date;
 
 public class AQIValue {
     private final int AQI;
@@ -21,5 +23,14 @@ public class AQIValue {
 
     public String getCity() {
         return city;
+    }
+
+    @Override
+    public String toString() {
+        return "AQIValue{" +
+                "AQI=" + AQI +
+                ", timestamp=" + new Date(timestamp * 1000) +
+                ", city='" + city + '\'' +
+                '}';
     }
 }
