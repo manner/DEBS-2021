@@ -1,11 +1,5 @@
 package de.hpi.debs;
 
-import de.tum.i13.bandency.Batch;
-import de.tum.i13.bandency.Benchmark;
-import de.tum.i13.bandency.BenchmarkConfiguration;
-import de.tum.i13.bandency.ChallengerGrpc;
-import de.tum.i13.bandency.Locations;
-
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.WindowedStream;
@@ -15,10 +9,22 @@ import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindow
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 
+import de.hpi.debs.aqi.AQIValue;
+import de.hpi.debs.aqi.AQIValueProcessor;
+import de.hpi.debs.aqi.AverageAQIAggregate;
+import de.tum.i13.bandency.Batch;
+import de.tum.i13.bandency.Benchmark;
+import de.tum.i13.bandency.BenchmarkConfiguration;
+import de.tum.i13.bandency.ChallengerGrpc;
+import de.tum.i13.bandency.Locations;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -27,15 +33,14 @@ public class Main {
 
     private static LocationRetriever locationRetriever;
 
-    public static void main(String[] args)  throws Exception { //we should handle the exception in code
+    public static void main(String[] args) throws Exception { // we should handle the exception in code
 
         ManagedChannel channel = ManagedChannelBuilder
                 .forAddress("challenge.msrg.in.tum.de", 5023)
                 .usePlaintext()
                 .build();
 
-
-        var challengeClient = ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
+        var challengeClient = ChallengerGrpc.newBlockingStub(channel) // for demo, we show the blocking stub
                 .withMaxInboundMessageSize(100 * 1024 * 1024)
                 .withMaxOutboundMessageSize(100 * 1024 * 1024);
 
@@ -44,47 +49,47 @@ public class Main {
                 .setBatchSize(1000)
                 .addQueries(BenchmarkConfiguration.Query.Q1)
                 .addQueries(BenchmarkConfiguration.Query.Q2)
-                .setToken("kfhlzrortvxxgywlghvtmmohhagkfzkv") //go to: https://challenge.msrg.in.tum.de/profile/
-                .setBenchmarkType("test") //Benchmark Type for testing
+                .setToken(System.getenv("DEBS_API_KEY")) // go to: https://challenge.msrg.in.tum.de/profile/
+                .setBenchmarkType("test") // Benchmark Type for testing
                 .build();
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        List<MeasurementOwn> measurements = new ArrayList<>();
-
-        //Create a new Benchmark
+        // Create a new Benchmark
         Benchmark newBenchmark = challengeClient.createNewBenchmark(bc);
 
-        //Get the locations
+        // Get the locations
         Locations locations = getLocations(challengeClient, newBenchmark);
         locationRetriever = new LocationRetriever(locations);
-        System.out.println(locations);
 
+        // Start the benchmark
+        challengeClient.startBenchmark(newBenchmark);
 
-        //Start the benchmark
-        System.out.println(challengeClient.startBenchmark(newBenchmark));
-
-        //Process the events
+        List<MeasurementOwn> measurements = new ArrayList<>();
+        // Process the events
         int cnt = 0;
-        while(true) {
+        while (true) {
             Batch batch = challengeClient.nextBatch(newBenchmark);
-            if (batch.getLast()) { //Stop when we get the last batch
+            if (batch.getLast()) { // Stop when we get the last batch
                 System.out.println("Received last batch, finished!");
                 break;
             }
 
-            //process the batch of events we have
+            // process the batch of events we have
             batch.getCurrentList().stream()
                     .map(MeasurementOwn::fromMeasurement)
                     .forEach(measurements::add);
-            MeasurementOwn m = measurements.get(batch.getCurrentCount() - 1);
-            m.setWatermark(true);
-            measurements.set(batch.getCurrentCount() - 1, m);
+            if (batch.getCurrentCount() > 0) {
+                MeasurementOwn m = measurements.get(batch.getCurrentCount() - 1);
+                m.setWatermark(true);
+                measurements.set(batch.getCurrentCount() - 1, m);
+            }
+
 
             System.out.println("Processed batch #" + cnt);
             ++cnt;
 
-            if(cnt > 2) { //for testing you can
+            if (cnt > 100) { //for testing you can
                 break;
             }
         }
@@ -102,19 +107,21 @@ public class Main {
                     return value;
                 });
 
-        WindowedStream<MeasurementOwn, String, TimeWindow> measurementByCity = cities
+        WindowedStream<MeasurementOwn, String, TimeWindow> measurementByCityWindow = cities
                 .filter(m -> m.getCity().isPresent())
                 .keyBy(m -> m.getCity().get())
-                .window(SlidingEventTimeWindows.of(Time.hours(24), Time.minutes(5)));
+                .window(SlidingEventTimeWindows.of(Time.minutes(1), Time.minutes(5)));
 
-        DataStream<Integer> aqiStream = measurementByCity
-                .aggregate(new AverageAQIAggregate());
+
+        DataStream<AQIValue> aqiStream = measurementByCityWindow
+                .aggregate(new AverageAQIAggregate(), new AQIValueProcessor());
 
         aqiStream.print();
-        DiscardingSink<MeasurementOwn> sink = new DiscardingSink<>();
-        cities.addSink(sink);
+        DiscardingSink<AQIValue> sink = new DiscardingSink<>();
+        aqiStream.addSink(sink);
 
-        System.out.println(challengeClient.endBenchmark(newBenchmark));
+        env.execute("benchmark");
+        challengeClient.endBenchmark(newBenchmark);
         System.out.println("ended Benchmark");
     }
 
