@@ -41,7 +41,6 @@ public class Main extends Base {
 
 
         challengeClient = ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
-
                 .withMaxInboundMessageSize(100 * 1024 * 1024)
                 .withMaxOutboundMessageSize(100 * 1024 * 1024);
 
@@ -75,13 +74,10 @@ public class Main extends Base {
                     return value;
                 });
 
-        WindowedStream<MeasurementOwn, String, TimeWindow> measurementByCityWindow = cities
+        DataStream<AQIValue> aqiStream = cities
                 .filter(m -> m.getCity().isPresent())
                 .keyBy(m -> m.getCity().get())
-                .window(SlidingEventTimeWindows.of(Time.minutes(1), Time.minutes(5)));
-
-
-        DataStream<AQIValue> aqiStream = measurementByCityWindow
+                .window(SlidingEventTimeWindows.of(Time.minutes(1), Time.minutes(5)))
                 .aggregate(new AverageAQIAggregate(), new AQIValueProcessor());
 
         aqiStream.print();

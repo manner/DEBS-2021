@@ -47,7 +47,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
             System.out.println("Processed batch #" + cnt);
             ++cnt;
 
-            if(cnt < batchNumbers) { //for testing you can
+            if(cnt >= batchNumbers) { //for testing you can
                 running = false;
             }
         }
