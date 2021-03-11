@@ -1,14 +1,10 @@
 package de.hpi.debs;
 
-<<<<<<< HEAD
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.BenchmarkConfiguration;
 import de.tum.i13.bandency.ChallengerGrpc;
 import de.tum.i13.bandency.Locations;
 
-=======
-import org.apache.flink.api.common.eventtime.WatermarkStrategy;
->>>>>>> 16ea092df413396b7d05e3067855121c151a2379
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.WindowedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -20,11 +16,7 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import de.hpi.debs.aqi.AQIValue;
 import de.hpi.debs.aqi.AQIValueProcessor;
 import de.hpi.debs.aqi.AverageAQIAggregate;
-import de.tum.i13.bandency.Batch;
-import de.tum.i13.bandency.Benchmark;
-import de.tum.i13.bandency.BenchmarkConfiguration;
-import de.tum.i13.bandency.ChallengerGrpc;
-import de.tum.i13.bandency.Locations;
+
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
@@ -33,9 +25,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 public class Main extends Base {
 
