@@ -1,12 +1,10 @@
 package de.hpi.debs;
 
-import de.tum.i13.bandency.Batch;
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.BenchmarkConfiguration;
 import de.tum.i13.bandency.ChallengerGrpc;
 import de.tum.i13.bandency.Locations;
 
-import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.WindowedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -23,19 +21,19 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class Main {
+public class Main extends Base {
 
+    public static ChallengerGrpc.ChallengerBlockingStub challengeClient;
     private static LocationRetriever locationRetriever;
 
-    public static void main(String[] args)  throws Exception { //we should handle the exception in code
+    public static void main(String[] args) throws Exception {
 
         ManagedChannel channel = ManagedChannelBuilder
                 .forAddress("challenge.msrg.in.tum.de", 5023)
                 .usePlaintext()
                 .build();
 
-
-        var challengeClient = ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
+        challengeClient = ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
                 .withMaxInboundMessageSize(100 * 1024 * 1024)
                 .withMaxOutboundMessageSize(100 * 1024 * 1024);
 
@@ -49,6 +47,7 @@ public class Main {
                 .build();
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(parallelism); // sets the number of parallel for each instance
 
         List<MeasurementOwn> measurements = new ArrayList<>();
 
@@ -58,43 +57,11 @@ public class Main {
         //Get the locations
         Locations locations = getLocations(challengeClient, newBenchmark);
         locationRetriever = new LocationRetriever(locations);
-        System.out.println(locations);
+        //System.out.println(locations);
 
-
-        //Start the benchmark
-        System.out.println(challengeClient.startBenchmark(newBenchmark));
-
-        //Process the events
-        int cnt = 0;
-        while(true) {
-            Batch batch = challengeClient.nextBatch(newBenchmark);
-            if (batch.getLast()) { //Stop when we get the last batch
-                System.out.println("Received last batch, finished!");
-                break;
-            }
-
-            //process the batch of events we have
-            batch.getCurrentList().stream()
-                    .map(MeasurementOwn::fromMeasurement)
-                    .forEach(measurements::add);
-            MeasurementOwn m = measurements.get(batch.getCurrentCount() - 1);
-            m.setWatermark(true);
-            measurements.set(batch.getCurrentCount() - 1, m);
-
-            System.out.println("Processed batch #" + cnt);
-            ++cnt;
-
-            if(cnt > 2) { //for testing you can
-                break;
-            }
-        }
-
-        WatermarkStrategy<MeasurementOwn> watermarkStrategy = WatermarkStrategy
-                .forGenerator((context) -> new MeasurementWatermarkGenerator())
-                .withTimestampAssigner(((element, timestamp) -> element.getTimestamp()));
-
-        DataStream<MeasurementOwn> measurementStream = env.fromCollection(measurements)
-                .assignTimestampsAndWatermarks(watermarkStrategy);
+        DataStream<MeasurementOwn> measurementStream = env.addSource(
+                measurementsSourceOrTest(new StreamGenerator(newBenchmark, 3))
+        );
 
         DataStream<MeasurementOwn> cities = measurementStream.map(
                 value -> {
@@ -113,6 +80,11 @@ public class Main {
         aqiStream.print();
         DiscardingSink<MeasurementOwn> sink = new DiscardingSink<>();
         cities.addSink(sink);
+
+        //Start the benchmark
+        System.out.println(challengeClient.startBenchmark(newBenchmark));
+
+        env.execute("benchmark");
 
         System.out.println(challengeClient.endBenchmark(newBenchmark));
         System.out.println("ended Benchmark");
