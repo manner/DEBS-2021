@@ -31,7 +31,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
             Batch batch = Main.challengeClient.nextBatch(benchmark);
 
             if (batch.getLast()) { //Stop when we get the last batch
-                System.out.println("Received last batch, finished!");
+                //System.out.println("Received last batch, finished!");
                 running = false;
                 break;
             }
@@ -44,7 +44,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
 
             context.emitWatermark(new Watermark((mList.get(mList.size() - 1).getTimestamp().getSeconds())));
 
-            System.out.println("Processed batch #" + cnt);
+            //System.out.println("Processed batch #" + cnt);
             ++cnt;
 
             if(cnt >= batchNumbers) { //for testing you can

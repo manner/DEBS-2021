@@ -80,7 +80,6 @@ public class Main extends Base {
                 .window(SlidingEventTimeWindows.of(Time.minutes(1), Time.minutes(5)))
                 .aggregate(new AverageAQIAggregate(), new AQIValueProcessor());
 
-        aqiStream.print();
         DiscardingSink<AQIValue> sink = new DiscardingSink<>();
         aqiStream.addSink(sink);
 
