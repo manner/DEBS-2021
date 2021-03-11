@@ -1,10 +1,14 @@
 package de.hpi.debs;
 
+<<<<<<< HEAD
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.BenchmarkConfiguration;
 import de.tum.i13.bandency.ChallengerGrpc;
 import de.tum.i13.bandency.Locations;
 
+=======
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+>>>>>>> 16ea092df413396b7d05e3067855121c151a2379
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.WindowedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -13,10 +17,22 @@ import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindow
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 
+import de.hpi.debs.aqi.AQIValue;
+import de.hpi.debs.aqi.AQIValueProcessor;
+import de.hpi.debs.aqi.AverageAQIAggregate;
+import de.tum.i13.bandency.Batch;
+import de.tum.i13.bandency.Benchmark;
+import de.tum.i13.bandency.BenchmarkConfiguration;
+import de.tum.i13.bandency.ChallengerGrpc;
+import de.tum.i13.bandency.Locations;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -33,7 +49,9 @@ public class Main extends Base {
                 .usePlaintext()
                 .build();
 
+
         challengeClient = ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
+
                 .withMaxInboundMessageSize(100 * 1024 * 1024)
                 .withMaxOutboundMessageSize(100 * 1024 * 1024);
 
@@ -42,19 +60,17 @@ public class Main extends Base {
                 .setBatchSize(1000)
                 .addQueries(BenchmarkConfiguration.Query.Q1)
                 .addQueries(BenchmarkConfiguration.Query.Q2)
-                .setToken("kfhlzrortvxxgywlghvtmmohhagkfzkv") //go to: https://challenge.msrg.in.tum.de/profile/
-                .setBenchmarkType("test") //Benchmark Type for testing
+                .setToken(System.getenv("DEBS_API_KEY")) // go to: https://challenge.msrg.in.tum.de/profile/
+                .setBenchmarkType("test") // Benchmark Type for testing
                 .build();
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(parallelism); // sets the number of parallel for each instance
 
-        List<MeasurementOwn> measurements = new ArrayList<>();
-
-        //Create a new Benchmark
+        // Create a new Benchmark
         Benchmark newBenchmark = challengeClient.createNewBenchmark(bc);
 
-        //Get the locations
+        // Get the locations
         Locations locations = getLocations(challengeClient, newBenchmark);
         locationRetriever = new LocationRetriever(locations);
         //System.out.println(locations);
@@ -69,23 +85,22 @@ public class Main extends Base {
                     return value;
                 });
 
-        WindowedStream<MeasurementOwn, String, TimeWindow> measurementByCity = cities
+        WindowedStream<MeasurementOwn, String, TimeWindow> measurementByCityWindow = cities
                 .filter(m -> m.getCity().isPresent())
                 .keyBy(m -> m.getCity().get())
-                .window(SlidingEventTimeWindows.of(Time.hours(24), Time.minutes(5)));
+                .window(SlidingEventTimeWindows.of(Time.minutes(1), Time.minutes(5)));
 
-        DataStream<Integer> aqiStream = measurementByCity
-                .aggregate(new AverageAQIAggregate());
+
+        DataStream<AQIValue> aqiStream = measurementByCityWindow
+                .aggregate(new AverageAQIAggregate(), new AQIValueProcessor());
 
         aqiStream.print();
-        DiscardingSink<MeasurementOwn> sink = new DiscardingSink<>();
-        cities.addSink(sink);
+        DiscardingSink<AQIValue> sink = new DiscardingSink<>();
+        aqiStream.addSink(sink);
 
         //Start the benchmark
         System.out.println(challengeClient.startBenchmark(newBenchmark));
-
         env.execute("benchmark");
-
         System.out.println(challengeClient.endBenchmark(newBenchmark));
         System.out.println("ended Benchmark");
     }

@@ -1,5 +1,6 @@
 package de.hpi.debs;
 
+import de.hpi.debs.aqi.AQICalculator;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

@@ -1,4 +1,4 @@
-package de.hpi.debs;
+package de.hpi.debs.aqi;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -7,7 +7,7 @@ import java.util.TreeMap;
 
 public class AQICalculator {
 
-    private static final Map<Float, Integer> AQI_25_Map = new HashMap<Float, Integer>() {{
+    private static final Map<Float, Integer> AQI_25_Map = new HashMap<>() {{
         put(0f, 0);
         put(12f, 50);
 
@@ -30,7 +30,7 @@ public class AQICalculator {
         put(500.4f, 500);
     }};
 
-    private static final Map<Float, Integer> AQI_10_Map = new HashMap<Float, Integer>() {{
+    private static final Map<Float, Integer> AQI_10_Map = new HashMap<>() {{
         put(0f, 0);
         put(54f, 50);
 

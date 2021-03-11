@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -24,14 +25,14 @@ public class LocationRetrieverTests {
         PointOwn p2 = new PointOwn(49.036854f, 9.376519f);
         PointOwn p3 = new PointOwn(52.390536f, 13.128201f);
 
-        String city1 = locationRetriever.findCityForLocation(p1);
-        String city2 = locationRetriever.findCityForLocation(p2);
-        String city3 = locationRetriever.findCityForLocation(p3);
+        Optional<String> city1 = locationRetriever.findCityForLocation(p1);
+        Optional<String>  city2 = locationRetriever.findCityForLocation(p2);
+        Optional<String>  city3 = locationRetriever.findCityForLocation(p3);
 
 
-        assertEquals("Potsdam", city1);
-        assertEquals("Oberstenfeld", city2);
-        assertEquals("Berlin Wannsee", city3);
+        assertEquals(Optional.of("Potsdam"), city1);
+        assertEquals(Optional.of("Oberstenfeld"), city2);
+        assertEquals(Optional.of("Berlin Wannsee"), city3);
 
     }
 

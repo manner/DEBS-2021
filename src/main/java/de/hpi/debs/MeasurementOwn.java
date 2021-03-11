@@ -41,13 +41,11 @@ public class MeasurementOwn implements Serializable {
     }
 
     public Optional<String> getCity() {
-        return Optional.ofNullable(city);
+        return city != null ? Optional.of(city) : Optional.empty();
     }
 
-    public void setCity(String city) {
-        if (city != null) {
-            this.city = city;
-        }
+    public void setCity(Optional<String> city) {
+        city.ifPresent(c -> this.city = c);
     }
 
     public float getP1() {
