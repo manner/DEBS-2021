@@ -3,7 +3,6 @@ package de.hpi.debs;
 import de.tum.i13.bandency.Measurement;
 
 import java.io.Serializable;
-import java.util.Optional;
 
 public class MeasurementOwn implements Serializable {
     private final float p1;
@@ -18,18 +17,24 @@ public class MeasurementOwn implements Serializable {
 
     private boolean isWatermark;
 
-    public MeasurementOwn(float p1, float p2, float latitude, float longitude, long timestamp) {
+    public MeasurementOwn(float p1, float p2, float latitude, float longitude, long timestamp, String city) {
         this.p1 = p1;
         this.p2 = p2;
         this.latitude = latitude;
         this.longitude = longitude;
         this.timestamp = timestamp;
-        this.city = null;
+        this.city = city;
         this.isWatermark = false;
     }
 
-    public static MeasurementOwn fromMeasurement(Measurement m) {
-        return new MeasurementOwn(m.getP1(), m.getP2(), m.getLatitude(), m.getLongitude(), m.getTimestamp().getSeconds());
+    public static MeasurementOwn fromMeasurement(Measurement m, String city) {
+        return new MeasurementOwn(
+                m.getP1(),
+                m.getP2(),
+                m.getLatitude(),
+                m.getLongitude(),
+                m.getTimestamp().getSeconds(),
+                city);
     }
 
     public boolean isWatermark() {
@@ -40,13 +45,11 @@ public class MeasurementOwn implements Serializable {
         this.isWatermark = value;
     }
 
-    public Optional<String> getCity() {
-        return city != null ? Optional.of(city) : Optional.empty();
+    public String getCity() {
+        return city;
     }
 
-    public void setCity(Optional<String> city) {
-        city.ifPresent(c -> this.city = c);
-    }
+    public void setCity(String city) { this.city = city; }
 
     public float getP1() {
         return p1;

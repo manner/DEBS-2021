@@ -1,17 +1,16 @@
 package de.hpi.debs;
 
+import de.hpi.debs.aqi.AQIValueRollingProcessor;
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.BenchmarkConfiguration;
 import de.tum.i13.bandency.ChallengerGrpc;
 import de.tum.i13.bandency.Locations;
 
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.WindowedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 
 import de.hpi.debs.aqi.AQIValue;
 import de.hpi.debs.aqi.AQIValueProcessor;
@@ -27,10 +26,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Date;
 
-public class Main extends Base {
+public class Main {
 
     public static ChallengerGrpc.ChallengerBlockingStub challengeClient;
-    private static LocationRetriever locationRetriever;
+    public static LocationRetriever locationRetriever;
 
     public static void main(String[] args) throws Exception {
 
@@ -38,7 +37,6 @@ public class Main extends Base {
                 .forAddress("challenge.msrg.in.tum.de", 5023)
                 .usePlaintext()
                 .build();
-
 
         challengeClient = ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
                 .withMaxInboundMessageSize(100 * 1024 * 1024)
@@ -54,7 +52,7 @@ public class Main extends Base {
                 .build();
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(parallelism); // sets the number of parallel for each instance
+        env.setParallelism(4); // sets the number of parallel for each instance
 
         // Create a new Benchmark
         Benchmark newBenchmark = challengeClient.createNewBenchmark(bc);
@@ -64,21 +62,18 @@ public class Main extends Base {
         locationRetriever = new LocationRetriever(locations);
         //System.out.println(locations);
 
-        DataStream<MeasurementOwn> measurementStream = env.addSource(
-                measurementsSourceOrTest(new StreamGenerator(newBenchmark, 3))
-        );
+        DataStream<MeasurementOwn> cities = env.addSource(new StreamGenerator(newBenchmark, 3));
 
-        DataStream<MeasurementOwn> cities = measurementStream.map(
-                value -> {
-                    value.setCity(locationRetriever.findCityForLocation(value.getPoint()));
-                    return value;
-                });
+        DataStream<AQIValue> aqiStreamOne = cities
+                .keyBy(MeasurementOwn::getCity)
+                .process(new AQIValueRollingProcessor());
 
-        DataStream<AQIValue> aqiStream = cities
-                .filter(m -> m.getCity().isPresent())
-                .keyBy(m -> m.getCity().get())
+        DataStream<AQIValue> aqiStreamTwo = cities
+                .keyBy(MeasurementOwn::getCity)
                 .window(SlidingEventTimeWindows.of(Time.minutes(1), Time.minutes(5)))
                 .aggregate(new AverageAQIAggregate(), new AQIValueProcessor());
+
+        DataStream<AQIValue> aqiStream = aqiStreamOne.union(aqiStreamTwo);
 
         DiscardingSink<AQIValue> sink = new DiscardingSink<>();
         aqiStream.addSink(sink);
@@ -126,3 +121,4 @@ public class Main extends Base {
         }
     }
 }
+

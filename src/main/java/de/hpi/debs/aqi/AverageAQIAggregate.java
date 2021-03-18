@@ -27,22 +27,22 @@ public class AverageAQIAggregate implements AggregateFunction<MeasurementOwn, Av
     }
 
     public static class Aggregate {
-        float sumAQI10;
-        float sumAQI25;
+        float sumPM10;
+        float sumPM25;
         int count;
 
         Aggregate() {
-            sumAQI10 = 0;
-            sumAQI25 = 0;
+            sumPM10 = 0;
+            sumPM25 = 0;
             count = 0;
         }
 
         public float getSumAQI10() {
-            return sumAQI10;
+            return sumPM10;
         }
 
         public float getSumAQI25() {
-            return sumAQI25;
+            return sumPM25;
         }
 
         public int getCount() {
@@ -50,22 +50,22 @@ public class AverageAQIAggregate implements AggregateFunction<MeasurementOwn, Av
         }
 
         public Aggregate merge(Aggregate a) {
-            sumAQI10 += a.getSumAQI10();
-            sumAQI25 += a.getSumAQI25();
+            sumPM10 += a.getSumAQI10();
+            sumPM25 += a.getSumAQI25();
             count += a.getCount();
             return this;
         }
 
         public Aggregate add(MeasurementOwn m) {
-            sumAQI10 += m.getP1();
-            sumAQI25 += m.getP2();
+            sumPM10 += m.getP1();
+            sumPM25 += m.getP2();
             count++;
             return this;
         }
 
         public Integer getAQI() {
-            float pm25Average = sumAQI25 / count;
-            float pm10Average = sumAQI10 / count;
+            float pm25Average = sumPM25 / count;
+            float pm10Average = sumPM10 / count;
             return AQICalculator.getAQI(pm25Average, pm10Average);
         }
     }

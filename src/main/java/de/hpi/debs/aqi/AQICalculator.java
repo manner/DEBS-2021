@@ -82,6 +82,4 @@ public class AQICalculator {
     public static int getAQI(float PM25, float PM10) {
         return Math.max(getAQI25(PM25), getAQI10(PM10));
     }
-
-
 }
