@@ -65,13 +65,13 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
             if (city.isPresent()) {
 
                 context.collectWithTimestamp(
-                        MeasurementOwn.fromMeasurement(mList.get(mList.size() - 1), city.get()),
+                        MeasurementOwn.fromMeasurement(mList.get(mList.size() - 1), city.get(), true),
                         mList.get(mList.size() - 1).getTimestamp().getSeconds()
                 );
             } else {
 
                 context.collectWithTimestamp(
-                        MeasurementOwn.fromMeasurement(mList.get(mList.size() - 1), "no"),
+                        MeasurementOwn.fromMeasurement(mList.get(mList.size() - 1), "no", true),
                         mList.get(mList.size() - 1).getTimestamp().getSeconds()
                 );
             }
