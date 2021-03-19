@@ -27,7 +27,7 @@ public class AQIValueRollingProcessor extends KeyedProcessFunction<String, Measu
             rollingP2.update(new RollingSum(86400));
         }
 
-        if(value.getCity().equals("no")) {
+        if(!value.getCity().equals("no")) {
             rollingP1.value().add(value.getP1(), value.getTimestamp());
             rollingP2.value().add(value.getP2(), value.getTimestamp());
         }
