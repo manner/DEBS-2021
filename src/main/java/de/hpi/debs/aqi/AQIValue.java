@@ -3,22 +3,28 @@ package de.hpi.debs.aqi;
 import java.util.Date;
 
 public class AQIValue {
-    private final int AQI;
+    private final double aqi;
     private final long timestamp;
+    private final boolean watermark;
     private final String city;
 
-    public AQIValue(int aqi, long timestamp, String city) {
-        this.AQI = aqi;
+    public AQIValue(double aqi, long timestamp, boolean watermark, String city) {
+        this.aqi = aqi;
         this.timestamp = timestamp;
+        this.watermark = watermark;
         this.city = city;
     }
 
-    public int getAQI() {
-        return AQI;
+    public double getAQI() {
+        return aqi;
     }
 
     public long getTimestamp() {
         return timestamp;
+    }
+
+    public boolean isWatermark() {
+        return watermark;
     }
 
     public String getCity() {
@@ -28,7 +34,7 @@ public class AQIValue {
     @Override
     public String toString() {
         return "AQIValue{" +
-                "AQI=" + AQI +
+                "AQI=" + aqi +
                 ", timestamp=" + new Date(timestamp * 1000) +
                 ", city='" + city + '\'' +
                 '}';

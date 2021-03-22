@@ -15,7 +15,7 @@ public class MeasurementOwn implements Serializable {
 
     private String city;
 
-    private boolean isWatermark;
+    private final boolean isWatermark;
 
     public MeasurementOwn(float p1, float p2, float latitude, float longitude, long timestamp, String city) {
         this.p1 = p1;
@@ -60,10 +60,6 @@ public class MeasurementOwn implements Serializable {
 
     public boolean isWatermark() {
         return isWatermark;
-    }
-
-    public void setWatermark(boolean value) {
-        this.isWatermark = value;
     }
 
     public String getCity() {

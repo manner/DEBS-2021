@@ -11,13 +11,11 @@ public class RollingSumTests {
 
     public static class RollingSumTestClass extends RollingSum {
 
-        public RollingSumTestClass(long length) {
-            super(length);
-        }
+        public RollingSumTestClass(double sum, long length) { super(sum, length); }
 
         public ArrayList<Event> getEvents() { return events; }
 
-        public float getSum() { return sum; }
+        public double getSum() { return sum; }
 
         public int getCount() { return count; }
 
@@ -39,10 +37,10 @@ public class RollingSumTests {
 
     @Test
     public void testSumming() {
-        RollingSumTestClass rs = new RollingSumTestClass(1000);
+        RollingSumTestClass rs = new RollingSumTestClass(0,1000);
 
         assertTrue(rs.getEvents().isEmpty());
-        assertEquals(0f, rs.getSum());
+        assertEquals(0.0, rs.getSum());
         assertEquals(0, rs.getCount());
         assertEquals(1000, rs.getLength());
 
@@ -50,39 +48,60 @@ public class RollingSumTests {
         rs.add(events.get(3).getValue(), events.get(3).getTimestamp());
         rs.add(events.get(8).getValue(), events.get(8).getTimestamp());
 
-        assertEquals(events.get(0).getValue(), rs.getEvents().get(0).getValue());
-        assertEquals(events.get(0).getTimestamp(), rs.getEvents().get(0).getTimestamp());
-        assertEquals(events.get(3).getValue(), rs.getEvents().get(1).getValue());
-        assertEquals(events.get(3).getTimestamp(), rs.getEvents().get(1).getTimestamp());
-        assertEquals(events.get(8).getValue(), rs.getEvents().get(2).getValue());
-        assertEquals(events.get(8).getTimestamp(), rs.getEvents().get(2).getTimestamp());
-        assertEquals(30f, rs.getSum());
+        assertEquals(
+                events.get(0).getValue(),
+                rs.getEvents().get(0).getValue()
+        );
+        assertEquals(
+                events.get(0).getTimestamp(),
+                rs.getEvents().get(0).getTimestamp()
+        );
+        assertEquals(
+                events.get(3).getValue(),
+                rs.getEvents().get(1).getValue()
+        );
+        assertEquals(
+                events.get(3).getTimestamp(),
+                rs.getEvents().get(1).getTimestamp()
+        );
+        assertEquals(
+                events.get(8).getValue(),
+                rs.getEvents().get(2).getValue()
+        );
+        assertEquals(
+                events.get(8).getTimestamp(),
+                rs.getEvents().get(2).getTimestamp()
+        );
+        assertEquals(30.0, rs.getSum());
         assertEquals(3, rs.getCount());
         assertEquals(1000, rs.getLength());
     }
 
     @Test
     public void testTrigger() {
-        RollingSumTestClass rs = new RollingSumTestClass(1000);
+        RollingSumTestClass rs = new RollingSumTestClass(0, 1000);
 
         for (Event event : events)
             rs.add(event.getValue(), event.getTimestamp());
 
-        float avg = 0;
+        double avg = 0;
 
         for (int i = 3; i < 8; i++)
             avg += events.get(i).getValue();
 
-        avg /= 5;
+        avg /= 5.0;
 
         assertEquals(avg, rs.trigger(1611));
-        assertEquals(70, rs.getSum());
+        assertEquals(70.0, rs.getSum());
         assertEquals(7, rs.getCount());
         assertEquals(1000, rs.getLength());
 
         for (int i = 0; i < 7; i++) {
 
-            assertEquals(events.get(i + 3).getValue(), rs.getEvents().get(i).getValue());
+            assertEquals(
+                    events.get(i + 3).getValue(),
+                    rs.getEvents().get(i).getValue()
+            );
             assertEquals(events.get(i + 3).getTimestamp(), rs.getEvents().get(i).getTimestamp());
         }
     }
