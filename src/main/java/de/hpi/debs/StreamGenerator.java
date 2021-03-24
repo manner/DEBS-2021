@@ -1,10 +1,11 @@
 package de.hpi.debs;
 
+import org.apache.flink.streaming.api.functions.source.SourceFunction;
+import org.apache.flink.streaming.api.watermark.Watermark;
+
 import de.tum.i13.bandency.Batch;
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.Measurement;
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import org.apache.flink.streaming.api.watermark.Watermark;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,7 +30,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
 
         Optional<String> city;
 
-        while(running) {
+        while (running) {
             Batch batch = Main.challengeClient.nextBatch(benchmark);
 
             if (batch.getLast()) { // Stop when we get the last batch
@@ -39,48 +40,38 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
             }
 
             // process the batch of events we have
-            List<Measurement> mList = batch.getCurrentList();
+            List<Measurement> currentYearList = batch.getCurrentList();
 
-            for (int i = 0; i < mList.size() - 1; i++) {
+            for (int i = 0; i < currentYearList.size() - 1; i++) {
 
                 city = Main.locationRetriever.findCityForLocation(
-                        new PointOwn(mList.get(i).getLatitude(), mList.get(i).getLongitude())
+                        new PointOwn(currentYearList.get(i))
                 );
 
-                if (city.isPresent())
+                if (city.isPresent()) {
                     context.collectWithTimestamp(
-                            MeasurementOwn.fromMeasurement(mList.get(i), city.get()),
-                            mList.get(i).getTimestamp().getSeconds()
+                            MeasurementOwn.fromMeasurement(currentYearList.get(i), city.get()),
+                            currentYearList.get(i).getTimestamp().getSeconds()
                     );
+                }
             }
 
             // emit watermark
             city = Main.locationRetriever.findCityForLocation(
-                    new PointOwn(
-                            mList.get(mList.size() - 1).getLatitude(),
-                            mList.get(mList.size() - 1).getLongitude()
-                    )
+                    new PointOwn(currentYearList.get(currentYearList.size() - 1))
             );
 
-            if (city.isPresent()) {
+            context.collectWithTimestamp(
+                    MeasurementOwn.fromMeasurement(currentYearList.get(currentYearList.size() - 1), city.orElse("no"), true),
+                    currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds()
+            );
 
-                context.collectWithTimestamp(
-                        MeasurementOwn.fromMeasurement(mList.get(mList.size() - 1), city.get(), true),
-                        mList.get(mList.size() - 1).getTimestamp().getSeconds()
-                );
-            } else {
-
-                context.collectWithTimestamp(
-                        MeasurementOwn.fromMeasurement(mList.get(mList.size() - 1), "no", true),
-                        mList.get(mList.size() - 1).getTimestamp().getSeconds()
-                );
-            }
-            context.emitWatermark(new Watermark(mList.get(mList.size() - 1).getTimestamp().getSeconds()));
+            context.emitWatermark(new Watermark(currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds()));
 
             // System.out.println("Processed batch #" + cnt);
             ++cnt;
 
-            if(cnt >= batchNumbers) { //for testing you can
+            if (cnt >= batchNumbers) { //for testing you can
                 running = false;
             }
         }
