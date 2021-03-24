@@ -1,12 +1,19 @@
 package de.hpi.debs;
 
-import de.hpi.debs.aqi.*;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
+import de.hpi.debs.aqi.AQIImprovement;
+import de.hpi.debs.aqi.AQIImprovementProcessor;
+import de.hpi.debs.aqi.AQIValue24h;
+import de.hpi.debs.aqi.AQIValue5d;
+import de.hpi.debs.aqi.AQIValueProcessor;
+import de.hpi.debs.aqi.AQIValueRollingPostProcessor;
+import de.hpi.debs.aqi.AQIValueRollingPreProcessor;
+import de.hpi.debs.aqi.AverageAQIAggregate;
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.BenchmarkConfiguration;
 import de.tum.i13.bandency.ChallengerGrpc;
@@ -62,25 +69,40 @@ public class Main {
         DataStream<MeasurementOwn> lastYearCities = cities.filter(MeasurementOwn::isLastYear);
         DataStream<MeasurementOwn> currentYearCities = cities.filter(MeasurementOwn::isCurrentYear);
 
-        DataStream<AQIValue24h> aqiStreamOne = cities
+        DataStream<AQIValue24h> aqiStreamCurrentYearOne = currentYearCities
                 .keyBy(MeasurementOwn::getCity)
                 .process(new AQIValueRollingPreProcessor());
 
-        DataStream<AQIValue24h> aqiStreamTwo = cities
+        DataStream<AQIValue24h> aqiStreamCurrentYearTwo = currentYearCities
                 .keyBy(MeasurementOwn::getCity)
                 .window(SlidingEventTimeWindows.of(Time.minutes(1), Time.minutes(5)))
                 .aggregate(new AverageAQIAggregate(), new AQIValueProcessor());
 
-        DataStream<AQIValue24h> aqiStream = aqiStreamOne.union(aqiStreamTwo);
+        DataStream<AQIValue24h> aqiStreamCurrentYearUnion = aqiStreamCurrentYearOne.union(aqiStreamCurrentYearTwo);
 
-        DataStream<AQIValue5d> fiveDayStream = aqiStream// need more attributes
+        DataStream<AQIValue24h> aqiStreamLastYear = lastYearCities
+                .keyBy(MeasurementOwn::getCity)
+                .window(SlidingEventTimeWindows.of(Time.minutes(1), Time.minutes(5)))
+                .aggregate(new AverageAQIAggregate(), new AQIValueProcessor());
+
+        DataStream<AQIValue5d> fiveDayStreamCurrentYear = aqiStreamCurrentYearUnion // need more attributes
                 .keyBy(AQIValue24h::getCity)
                 .process(new AQIValueRollingPostProcessor());
 
+        DataStream<AQIValue5d> fiveDayStreamLastYear = aqiStreamLastYear // need more attributes
+                .keyBy(AQIValue24h::getCity)
+                .process(new AQIValueRollingPostProcessor());
+
+        DataStream<AQIImprovement> fiveDayImprovement = fiveDayStreamCurrentYear
+                .keyBy(AQIValue5d::getCity)
+                .intervalJoin(fiveDayStreamLastYear.keyBy(AQIValue5d::getCity))
+                .between(Time.days(365), Time.days(356))
+                .process(new AQIImprovementProcessor());
+
         //seven day window is little bit different than the five day window and will not use the "rolling" processor
 
-        DiscardingSink<AQIValue5d> sink = new DiscardingSink<>();
-        fiveDayStream.addSink(sink);
+        DiscardingSink<AQIImprovement> sink = new DiscardingSink<>();
+        fiveDayImprovement.addSink(sink);
 
         //Start the benchmark
         System.out.println(challengeClient.startBenchmark(newBenchmark));
