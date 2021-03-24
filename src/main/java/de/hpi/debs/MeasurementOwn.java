@@ -3,8 +3,14 @@ package de.hpi.debs;
 import de.tum.i13.bandency.Measurement;
 
 import java.io.Serializable;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.Month;
+import java.util.TimeZone;
 
 public class MeasurementOwn implements Serializable {
+
+    private static final LocalDateTime FIRST_OF_2019 = LocalDateTime.of(2020, Month.JANUARY, 1, 0, 0);
     private final float p1;
     private final float p2;
 
@@ -58,6 +64,14 @@ public class MeasurementOwn implements Serializable {
                 watermark);
     }
 
+    public boolean isLastYear() {
+        return getLocalDateTimeStamp().isBefore(FIRST_OF_2019);
+    }
+
+    public boolean isCurrentYear() {
+        return !isLastYear();
+    }
+
     public boolean isWatermark() {
         return isWatermark;
     }
@@ -90,5 +104,23 @@ public class MeasurementOwn implements Serializable {
 
     public long getTimestamp() {
         return timestamp;
+    }
+
+    public LocalDateTime getLocalDateTimeStamp() {
+        return LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), TimeZone.getTimeZone("GMT").toZoneId());
+    }
+
+    @Override
+    public String toString() {
+        return "MeasurementOwn{" +
+                (isLastYear() ? "lastYear" : "currentYear") +
+                ", p1=" + p1 +
+                ", p2=" + p2 +
+                ", latitude=" + latitude +
+                ", longitude=" + longitude +
+                ", timestamp=" + getLocalDateTimeStamp().toString() +
+                ", isWatermark=" + isWatermark +
+                ", city='" + city + '\'' +
+                '}';
     }
 }

@@ -1,17 +1,20 @@
 package de.hpi.debs;
 
-import de.hpi.debs.aqi.*;
-import de.tum.i13.bandency.Benchmark;
-import de.tum.i13.bandency.BenchmarkConfiguration;
-import de.tum.i13.bandency.ChallengerGrpc;
-import de.tum.i13.bandency.Locations;
-
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
+import de.hpi.debs.aqi.AQIValue;
+import de.hpi.debs.aqi.AQIValueProcessor;
+import de.hpi.debs.aqi.AQIValueRollingPostProcessor;
+import de.hpi.debs.aqi.AQIValueRollingPreProcessor;
+import de.hpi.debs.aqi.AverageAQIAggregate;
+import de.tum.i13.bandency.Benchmark;
+import de.tum.i13.bandency.BenchmarkConfiguration;
+import de.tum.i13.bandency.ChallengerGrpc;
+import de.tum.i13.bandency.Locations;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
@@ -59,6 +62,9 @@ public class Main {
         //System.out.println(locations);
 
         DataStream<MeasurementOwn> cities = env.addSource(new StreamGenerator(newBenchmark, 3));
+
+        DataStream<MeasurementOwn> lastYearCities = cities.filter(MeasurementOwn::isLastYear);
+        DataStream<MeasurementOwn> currentYearCities = cities.filter(MeasurementOwn::isCurrentYear);
 
         DataStream<AQIValue> aqiStreamOne = cities
                 .keyBy(MeasurementOwn::getCity)

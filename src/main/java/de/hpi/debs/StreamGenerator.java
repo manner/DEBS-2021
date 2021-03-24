@@ -41,6 +41,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
 
             // process the batch of events we have
             List<Measurement> currentYearList = batch.getCurrentList();
+            List<Measurement> lastYearList = batch.getLastyearList();
 
             for (int i = 0; i < currentYearList.size() - 1; i++) {
 
@@ -52,6 +53,20 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
                     context.collectWithTimestamp(
                             MeasurementOwn.fromMeasurement(currentYearList.get(i), city.get()),
                             currentYearList.get(i).getTimestamp().getSeconds()
+                    );
+                }
+            }
+
+            for (int i = 0; i < lastYearList.size() - 1; i++) {
+
+                city = Main.locationRetriever.findCityForLocation(
+                        new PointOwn(lastYearList.get(i))
+                );
+
+                if (city.isPresent()) {
+                    context.collectWithTimestamp(
+                            MeasurementOwn.fromMeasurement(lastYearList.get(i), city.get()),
+                            lastYearList.get(i).getTimestamp().getSeconds()
                     );
                 }
             }
