@@ -1,16 +1,12 @@
 package de.hpi.debs;
 
+import de.hpi.debs.aqi.*;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
-import de.hpi.debs.aqi.AQIValue;
-import de.hpi.debs.aqi.AQIValueProcessor;
-import de.hpi.debs.aqi.AQIValueRollingPostProcessor;
-import de.hpi.debs.aqi.AQIValueRollingPreProcessor;
-import de.hpi.debs.aqi.AverageAQIAggregate;
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.BenchmarkConfiguration;
 import de.tum.i13.bandency.ChallengerGrpc;
@@ -66,24 +62,24 @@ public class Main {
         DataStream<MeasurementOwn> lastYearCities = cities.filter(MeasurementOwn::isLastYear);
         DataStream<MeasurementOwn> currentYearCities = cities.filter(MeasurementOwn::isCurrentYear);
 
-        DataStream<AQIValue> aqiStreamOne = cities
+        DataStream<AQIValue24h> aqiStreamOne = cities
                 .keyBy(MeasurementOwn::getCity)
                 .process(new AQIValueRollingPreProcessor());
 
-        DataStream<AQIValue> aqiStreamTwo = cities
+        DataStream<AQIValue24h> aqiStreamTwo = cities
                 .keyBy(MeasurementOwn::getCity)
                 .window(SlidingEventTimeWindows.of(Time.minutes(1), Time.minutes(5)))
                 .aggregate(new AverageAQIAggregate(), new AQIValueProcessor());
 
-        DataStream<AQIValue> aqiStream = aqiStreamOne.union(aqiStreamTwo);
+        DataStream<AQIValue24h> aqiStream = aqiStreamOne.union(aqiStreamTwo);
 
-        DataStream<AQIValue> fiveDayStream = aqiStream// need more attributes
-                .keyBy(AQIValue::getCity)
+        DataStream<AQIValue5d> fiveDayStream = aqiStream// need more attributes
+                .keyBy(AQIValue24h::getCity)
                 .process(new AQIValueRollingPostProcessor());
 
         //seven day window is little bit different than the five day window and will not use the "rolling" processor
 
-        DiscardingSink<AQIValue> sink = new DiscardingSink<>();
+        DiscardingSink<AQIValue5d> sink = new DiscardingSink<>();
         fiveDayStream.addSink(sink);
 
         //Start the benchmark

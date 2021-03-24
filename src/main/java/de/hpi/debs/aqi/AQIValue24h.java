@@ -2,20 +2,20 @@ package de.hpi.debs.aqi;
 
 import java.util.Date;
 
-public class AQIValue {
-    private final double aqi;
+public class AQIValue24h {
+    private final int aqi;
     private final long timestamp;
     private final boolean watermark;
     private final String city;
 
-    public AQIValue(double aqi, long timestamp, boolean watermark, String city) {
+    public AQIValue24h(int aqi, long timestamp, boolean watermark, String city) {
         this.aqi = aqi;
         this.timestamp = timestamp;
         this.watermark = watermark;
         this.city = city;
     }
 
-    public double getAQI() {
+    public int getAQI() {
         return aqi;
     }
 

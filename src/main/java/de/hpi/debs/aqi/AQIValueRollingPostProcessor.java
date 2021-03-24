@@ -8,7 +8,7 @@ import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
 
 public class AQIValueRollingPostProcessor
-        extends KeyedProcessFunction<String, AQIValue, AQIValue> {
+        extends KeyedProcessFunction<String, AQIValue24h, AQIValue5d> {
 
     private ValueState<RollingSum> rolling;
 
@@ -18,7 +18,7 @@ public class AQIValueRollingPostProcessor
     }
 
     @Override
-    public void processElement(AQIValue value, Context ctx, Collector<AQIValue> out) throws Exception {
+    public void processElement(AQIValue24h value, Context ctx, Collector<AQIValue5d> out) throws Exception {
         if(rolling.value() == null)
             rolling.update(new RollingSum(0.0, 432000));
 
@@ -29,7 +29,7 @@ public class AQIValueRollingPostProcessor
             // trigger average computation and emitting
             double avgAQI = rolling.value().trigger(value.getTimestamp());
 
-            out.collect(new AQIValue(avgAQI, value.getTimestamp(), true, value.getCity()));
+            out.collect(new AQIValue5d(avgAQI, value.getTimestamp(), true, value.getCity()));
         }
     }
 }

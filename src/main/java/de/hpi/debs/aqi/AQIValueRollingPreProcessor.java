@@ -9,7 +9,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
 
-public class AQIValueRollingPreProcessor extends KeyedProcessFunction<String, MeasurementOwn, AQIValue> {
+public class AQIValueRollingPreProcessor extends KeyedProcessFunction<String, MeasurementOwn, AQIValue24h> {
 
     private ValueState<RollingSum> rollingP1;
     private ValueState<RollingSum> rollingP2;
@@ -26,7 +26,7 @@ public class AQIValueRollingPreProcessor extends KeyedProcessFunction<String, Me
     }
 
     @Override
-    public void processElement(MeasurementOwn value, Context ctx, Collector<AQIValue> out) throws Exception {
+    public void processElement(MeasurementOwn value, Context ctx, Collector<AQIValue24h> out) throws Exception {
         if(rollingP1.value() == null || rollingP2.value() == null) {
             rollingP1.update(new RollingSum(0.0, length));
             rollingP2.update(new RollingSum(0.0, length));
@@ -43,8 +43,8 @@ public class AQIValueRollingPreProcessor extends KeyedProcessFunction<String, Me
             RollingSum rP2 = rollingP2.value();
 
             if (rP1.isEmpty() || rP2.isEmpty()) {
-                out.collect(new AQIValue(
-                        -1.0,
+                out.collect(new AQIValue24h(
+                        -1,
                         value.getTimestamp(),
                         true,
                         value.getCity()
@@ -53,7 +53,7 @@ public class AQIValueRollingPreProcessor extends KeyedProcessFunction<String, Me
                 float avgP1 = (float) rP1.trigger(value.getTimestamp());
                 float avgP2 = (float) rP2.trigger(value.getTimestamp());
 
-                out.collect(new AQIValue(
+                out.collect(new AQIValue24h(
                         AQICalculator.getAQI(avgP2, avgP1),
                         value.getTimestamp(),
                         true,
