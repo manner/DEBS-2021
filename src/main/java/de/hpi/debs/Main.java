@@ -96,7 +96,7 @@ public class Main {
         DataStream<AQIImprovement> fiveDayImprovement = fiveDayStreamCurrentYear
                 .keyBy(AQIValue5d::getCity)
                 .intervalJoin(fiveDayStreamLastYear.keyBy(AQIValue5d::getCity))
-                .between(Time.days(365), Time.days(356))
+                .between(Time.days(365), Time.days(365))
                 .process(new AQIImprovementProcessor());
 
         //seven day window is little bit different than the five day window and will not use the "rolling" processor
