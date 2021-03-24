@@ -14,6 +14,7 @@ import de.hpi.debs.aqi.AQIValueProcessor;
 import de.hpi.debs.aqi.AQIValueRollingPostProcessor;
 import de.hpi.debs.aqi.AQIValueRollingPreProcessor;
 import de.hpi.debs.aqi.AverageAQIAggregate;
+import de.hpi.debs.serializer.LocationSerializer;
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.BenchmarkConfiguration;
 import de.tum.i13.bandency.ChallengerGrpc;
@@ -60,7 +61,7 @@ public class Main {
         Benchmark newBenchmark = challengeClient.createNewBenchmark(bc);
 
         // Get the locations
-        Locations locations = getLocations(challengeClient, newBenchmark);
+        Locations locations = LocationSerializer.getLocations(challengeClient, newBenchmark);
         locationRetriever = new LocationRetriever(locations);
         //System.out.println(locations);
 
@@ -111,40 +112,6 @@ public class Main {
         System.out.println("ended Benchmark");
     }
 
-    public static Locations getLocations(ChallengerGrpc.ChallengerBlockingStub client, Benchmark benchmark) {
-        Locations locations;
-        String locationFileName = "./locations.ser";
-        if (new File(locationFileName).isFile()) {
-            locations = readLocationsFromFile(locationFileName);
-        } else {
-            locations = client.getLocations(benchmark);
-            saveLocationsToFile(locationFileName, locations);
-        }
-        return locations;
-    }
 
-    public static Locations readLocationsFromFile(String locationFileName) {
-        Locations locations = null;
-        try (
-                FileInputStream streamIn = new FileInputStream(locationFileName);
-                ObjectInputStream objectinputstream = new ObjectInputStream(streamIn)
-        ) {
-            locations = (Locations) objectinputstream.readObject();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return locations;
-    }
-
-    private static void saveLocationsToFile(String locationFileName, Locations locations) {
-        try (
-                FileOutputStream fos = new FileOutputStream(locationFileName, true);
-                ObjectOutputStream oos = new ObjectOutputStream(fos)
-        ) {
-            oos.writeObject(locations);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
 }
 
