@@ -75,14 +75,14 @@ public class Main {
 
         DataStream<AQIValue24h> aqiStreamCurrentYearTwo = currentYearCities
                 .keyBy(MeasurementOwn::getCity)
-                .window(SlidingEventTimeWindows.of(Time.minutes(1), Time.minutes(5)))
+                .window(SlidingEventTimeWindows.of(Time.hours(24), Time.minutes(5)))
                 .aggregate(new AverageAQIAggregate(), new AQIValueProcessor());
 
         DataStream<AQIValue24h> aqiStreamCurrentYearUnion = aqiStreamCurrentYearOne.union(aqiStreamCurrentYearTwo);
 
         DataStream<AQIValue24h> aqiStreamLastYear = lastYearCities
                 .keyBy(MeasurementOwn::getCity)
-                .window(SlidingEventTimeWindows.of(Time.minutes(1), Time.minutes(5)))
+                .window(SlidingEventTimeWindows.of(Time.hours(24), Time.minutes(5)))
                 .aggregate(new AverageAQIAggregate(), new AQIValueProcessor());
 
         DataStream<AQIValue5d> fiveDayStreamCurrentYear = aqiStreamCurrentYearUnion // need more attributes

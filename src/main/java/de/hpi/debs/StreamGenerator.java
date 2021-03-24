@@ -52,7 +52,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
                 if (city.isPresent()) {
                     context.collectWithTimestamp(
                             MeasurementOwn.fromMeasurement(currentYearList.get(i), city.get()),
-                            currentYearList.get(i).getTimestamp().getSeconds()
+                            currentYearList.get(i).getTimestamp().getSeconds() * 1000
                     );
                 }
             }
@@ -66,7 +66,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
                 if (city.isPresent()) {
                     context.collectWithTimestamp(
                             MeasurementOwn.fromMeasurement(lastYearList.get(i), city.get()),
-                            lastYearList.get(i).getTimestamp().getSeconds()
+                            lastYearList.get(i).getTimestamp().getSeconds() * 1000
                     );
                 }
             }
@@ -78,10 +78,10 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
 
             context.collectWithTimestamp(
                     MeasurementOwn.fromMeasurement(currentYearList.get(currentYearList.size() - 1), city.orElse("no"), true),
-                    currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds()
+                    currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds() * 1000
             );
 
-            context.emitWatermark(new Watermark(currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds()));
+            context.emitWatermark(new Watermark(currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds() * 1000));
 
             // System.out.println("Processed batch #" + cnt);
             ++cnt;

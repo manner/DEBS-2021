@@ -33,9 +33,9 @@ public class AQIValue5d {
 
     @Override
     public String toString() {
-        return "AQIValue{" +
+        return "AQIValue5d{" +
                 "AQI=" + aqi +
-                ", timestamp=" + new Date(timestamp * 1000) +
+                ", timestamp=" + new Date(timestamp) +
                 ", city='" + city + '\'' +
                 '}';
     }
