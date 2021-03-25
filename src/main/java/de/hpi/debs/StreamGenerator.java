@@ -3,6 +3,7 @@ package de.hpi.debs;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
 
+import de.hpi.debs.serializer.BatchSerializer;
 import de.tum.i13.bandency.Batch;
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.Measurement;
@@ -31,7 +32,8 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
         Optional<String> city;
 
         while (running) {
-            Batch batch = Main.challengeClient.nextBatch(benchmark);
+//            Batch batch = Main.challengeClient.nextBatch(benchmark);
+            Batch batch = BatchSerializer.getBatch(Main.challengeClient, benchmark, cnt);
 
             if (batch.getLast()) { // Stop when we get the last batch
                 // System.out.println("Received last batch, finished!");
