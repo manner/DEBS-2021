@@ -4,10 +4,12 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
 import de.hpi.debs.aqi.AQIImprovement;
 import de.hpi.debs.aqi.AQIImprovementProcessor;
+import de.hpi.debs.aqi.AQITop50Improvements;
 import de.hpi.debs.aqi.AQIValue24h;
 import de.hpi.debs.aqi.AQIValue5d;
 import de.hpi.debs.aqi.AQIValueProcessor;
@@ -22,11 +24,6 @@ import de.tum.i13.bandency.Locations;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Date;
 
 public class Main {
@@ -99,6 +96,15 @@ public class Main {
                 .intervalJoin(fiveDayStreamLastYear.keyBy(AQIValue5d::getCity))
                 .between(Time.days(-365), Time.days(-365))
                 .process(new AQIImprovementProcessor());
+
+        DataStream<AQIImprovement> top50 = fiveDayImprovement
+                .keyBy(AQIImprovement::getTimestamp)
+//                .window(GlobalWindows.create())
+//                .trigger(new WatermarkTrigger())
+                .window(TumblingEventTimeWindows.of(Time.minutes(5)))
+                .process(new AQITop50Improvements());
+
+        top50.print();
 
         //seven day window is little bit different than the five day window and will not use the "rolling" processor
 

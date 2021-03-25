@@ -35,8 +35,9 @@ public class AQIValue24h {
     public String toString() {
         return "AQIValue24h{" +
                 "AQI=" + aqi +
-                ", timestamp=" + new Date(timestamp) +
+                ", timestamp=" + new Date(timestamp).toGMTString() +
                 ", city='" + city + '\'' +
+                ", isWatermark='" + isWatermark() +
                 '}';
     }
 }
