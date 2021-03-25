@@ -7,6 +7,8 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
 
+import de.hpi.debs.RollingSum;
+
 public class AQIValueRollingPostProcessor
         extends KeyedProcessFunction<String, AQIValue24h, AQIValue5d> {
 
@@ -19,8 +21,9 @@ public class AQIValueRollingPostProcessor
 
     @Override
     public void processElement(AQIValue24h value, Context ctx, Collector<AQIValue5d> out) throws Exception {
-        if(rolling.value() == null)
-            rolling.update(new RollingSum(0.0, 432000));
+        if (rolling.value() == null) {
+            rolling.update(new RollingSum(0.0, 432000 * 1000));
+        }
 
         if(!value.getCity().equals("no"))
             rolling.value().add(value.getAQI(), value.getTimestamp());

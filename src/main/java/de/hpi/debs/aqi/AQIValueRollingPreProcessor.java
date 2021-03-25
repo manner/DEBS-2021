@@ -13,7 +13,7 @@ public class AQIValueRollingPreProcessor extends KeyedProcessFunction<String, Me
 
     private ValueState<RollingSum> rollingP1;
     private ValueState<RollingSum> rollingP2;
-    private long length = 86400;
+    private long length = 86400 * 1000;
 
     public void setLength(long length) {
         this.length = length;

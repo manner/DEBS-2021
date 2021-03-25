@@ -10,7 +10,7 @@ import java.util.TimeZone;
 
 public class MeasurementOwn implements Serializable {
 
-    private static final LocalDateTime FIRST_OF_2019 = LocalDateTime.of(2020, Month.JANUARY, 1, 0, 0);
+    private static final LocalDateTime FIRST_OF_2020 = LocalDateTime.of(2020, Month.JANUARY, 1, 0, 0);
     private final float p1;
     private final float p2;
 
@@ -49,7 +49,7 @@ public class MeasurementOwn implements Serializable {
                 m.getP2(),
                 m.getLatitude(),
                 m.getLongitude(),
-                m.getTimestamp().getSeconds(),
+                m.getTimestamp().getSeconds() * 1000,
                 city);
     }
 
@@ -59,13 +59,13 @@ public class MeasurementOwn implements Serializable {
                 m.getP2(),
                 m.getLatitude(),
                 m.getLongitude(),
-                m.getTimestamp().getSeconds(),
+                m.getTimestamp().getSeconds() * 1000,
                 city,
                 watermark);
     }
 
     public boolean isLastYear() {
-        return getLocalDateTimeStamp().isBefore(FIRST_OF_2019);
+        return getLocalDateTimeStamp().isBefore(FIRST_OF_2020);
     }
 
     public boolean isCurrentYear() {
@@ -107,7 +107,7 @@ public class MeasurementOwn implements Serializable {
     }
 
     public LocalDateTime getLocalDateTimeStamp() {
-        return LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), TimeZone.getTimeZone("GMT").toZoneId());
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), TimeZone.getTimeZone("GMT").toZoneId());
     }
 
     @Override
