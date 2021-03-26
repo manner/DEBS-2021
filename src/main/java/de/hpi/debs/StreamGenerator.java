@@ -43,44 +43,29 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
             List<Measurement> currentYearList = batch.getCurrentList();
             List<Measurement> lastYearList = batch.getLastyearList();
 
-            for (int i = 0; i < currentYearList.size() - 1; i++) {
-
-                city = Main.locationRetriever.findCityForLocation(
-                        new PointOwn(currentYearList.get(i))
-                );
+            for (Measurement m : currentYearList) {
+                city = Main.locationRetriever.findCityForLocation(new PointOwn(m));
 
                 if (city.isPresent()) {
                     context.collectWithTimestamp(
-                            MeasurementOwn.fromMeasurement(currentYearList.get(i), city.get()),
-                            currentYearList.get(i).getTimestamp().getSeconds()
+                            MeasurementOwn.fromMeasurement(m, city.get()),
+                            m.getTimestamp().getSeconds()
                     );
                 }
             }
 
-            for (int i = 0; i < lastYearList.size() - 1; i++) {
-
-                city = Main.locationRetriever.findCityForLocation(
-                        new PointOwn(lastYearList.get(i))
-                );
+            for (Measurement m : lastYearList) {
+                city = Main.locationRetriever.findCityForLocation(new PointOwn(m));
 
                 if (city.isPresent()) {
                     context.collectWithTimestamp(
-                            MeasurementOwn.fromMeasurement(lastYearList.get(i), city.get()),
-                            lastYearList.get(i).getTimestamp().getSeconds()
+                            MeasurementOwn.fromMeasurement(m, city.get()),
+                            m.getTimestamp().getSeconds()
                     );
                 }
             }
 
             // emit watermark
-            city = Main.locationRetriever.findCityForLocation(
-                    new PointOwn(currentYearList.get(currentYearList.size() - 1))
-            );
-
-            context.collectWithTimestamp(
-                    MeasurementOwn.fromMeasurement(currentYearList.get(currentYearList.size() - 1), city.orElse("no"), true),
-                    currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds()
-            );
-
             context.emitWatermark(new Watermark(currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds()));
 
             // System.out.println("Processed batch #" + cnt);

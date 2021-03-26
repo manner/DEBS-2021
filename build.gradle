@@ -56,8 +56,12 @@ sourceSets {
 }
 
 dependencies {
+    implementation 'org.jetbrains:annotations:20.1.0'
     testImplementation "org.junit.jupiter:junit-jupiter-api:5.7.1"
     testImplementation "junit:junit:4.13.1"
+    testImplementation "org.apache.flink:flink-test:1.12.1"
+    testImplementation "org.apache.flink:flink-test-utils:1.12.1"
+    testImplementation "org.apache.flink:flink-test-utils-junit:1.12.1"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
 
     implementation "io.grpc:grpc-netty-shaded:1.33.1"

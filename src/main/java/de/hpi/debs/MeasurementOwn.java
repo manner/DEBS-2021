@@ -33,16 +33,6 @@ public class MeasurementOwn implements Serializable {
         this.isWatermark = false;
     }
 
-    public MeasurementOwn(float p1, float p2, float latitude, float longitude, long timestamp, String city, boolean watermark) {
-        this.p1 = p1;
-        this.p2 = p2;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.timestamp = timestamp;
-        this.city = city;
-        this.isWatermark = watermark;
-    }
-
     public static MeasurementOwn fromMeasurement(Measurement m, String city) {
         return new MeasurementOwn(
                 m.getP1(),
@@ -53,27 +43,12 @@ public class MeasurementOwn implements Serializable {
                 city);
     }
 
-    public static MeasurementOwn fromMeasurement(Measurement m, String city, boolean watermark) {
-        return new MeasurementOwn(
-                m.getP1(),
-                m.getP2(),
-                m.getLatitude(),
-                m.getLongitude(),
-                m.getTimestamp().getSeconds(),
-                city,
-                watermark);
-    }
-
     public boolean isLastYear() {
         return getLocalDateTimeStamp().isBefore(FIRST_OF_2019);
     }
 
     public boolean isCurrentYear() {
         return !isLastYear();
-    }
-
-    public boolean isWatermark() {
-        return isWatermark;
     }
 
     public String getCity() {

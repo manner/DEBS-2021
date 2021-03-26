@@ -5,13 +5,11 @@ import java.util.Date;
 public class AQIValue24h {
     private final int aqi;
     private final long timestamp;
-    private final boolean watermark;
     private final String city;
 
-    public AQIValue24h(int aqi, long timestamp, boolean watermark, String city) {
+    public AQIValue24h(int aqi, long timestamp, String city) {
         this.aqi = aqi;
         this.timestamp = timestamp;
-        this.watermark = watermark;
         this.city = city;
     }
 
@@ -21,10 +19,6 @@ public class AQIValue24h {
 
     public long getTimestamp() {
         return timestamp;
-    }
-
-    public boolean isWatermark() {
-        return watermark;
     }
 
     public String getCity() {

@@ -4,12 +4,14 @@ import java.util.Date;
 
 public class AQIValue5d {
     private final double aqi;
+    private final double currentAqi;
     private final long timestamp;
     private final boolean watermark;
     private final String city;
 
-    public AQIValue5d(double aqi, long timestamp, boolean watermark, String city) {
+    public AQIValue5d(double aqi, double currentAqi, long timestamp, boolean watermark, String city) {
         this.aqi = aqi;
+        this.currentAqi = currentAqi;
         this.timestamp = timestamp;
         this.watermark = watermark;
         this.city = city;

@@ -11,8 +11,8 @@ public class AQIValueProcessor extends ProcessWindowFunction<Integer, AQIValue24
             Context context,
             Iterable<Integer> elements,
             Collector<AQIValue24h> out
-    ) throws Exception {
+    ) {
         int AQI = elements.iterator().next();
-        out.collect(new AQIValue24h(AQI, context.window().getEnd(), false, city));
+        out.collect(new AQIValue24h(AQI, context.window().getEnd(), city));
     }
 }
