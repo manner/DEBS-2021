@@ -21,8 +21,6 @@ public class MeasurementOwn implements Serializable {
 
     private String city;
 
-    private final boolean isWatermark;
-
     public MeasurementOwn(float p1, float p2, float latitude, float longitude, long timestamp, String city) {
         this.p1 = p1;
         this.p2 = p2;
@@ -30,7 +28,6 @@ public class MeasurementOwn implements Serializable {
         this.longitude = longitude;
         this.timestamp = timestamp;
         this.city = city;
-        this.isWatermark = false;
     }
 
     public static MeasurementOwn fromMeasurement(Measurement m, String city) {
@@ -94,7 +91,6 @@ public class MeasurementOwn implements Serializable {
                 ", latitude=" + latitude +
                 ", longitude=" + longitude +
                 ", timestamp=" + getLocalDateTimeStamp().toString() +
-                ", isWatermark=" + isWatermark +
                 ", city='" + city + '\'' +
                 '}';
     }

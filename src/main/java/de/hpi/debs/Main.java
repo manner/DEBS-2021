@@ -4,7 +4,6 @@ import de.hpi.debs.aqi.*;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
@@ -14,7 +13,6 @@ import de.tum.i13.bandency.ChallengerGrpc;
 import de.tum.i13.bandency.Locations;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import org.apache.flink.util.Collector;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -69,7 +67,7 @@ public class Main {
                 .transform(
                         "AQIValue24h",
                         TypeInformation.of(AQIValue24h.class),
-                        new AQIValue24hProcessOperator()
+                        new AQIValue24hProcessOperator(1577833200)
                 );
 
         DataStream<AQIValue24h> aqiStreamLastYear = lastYearCities
@@ -77,7 +75,7 @@ public class Main {
                 .transform(
                         "AQIValue24h",
                         TypeInformation.of(AQIValue24h.class),
-                        new AQIValue24hProcessOperator()
+                        new AQIValue24hProcessOperator(1577833200)
                 );
 
         DataStream<AQIValue5d> fiveDayStreamCurrentYear = aqiStreamCurrentYear // need more attributes

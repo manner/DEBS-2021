@@ -16,6 +16,8 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
     private int batchNumbers;
     private Benchmark benchmark;
 
+    public static long start;
+
     public StreamGenerator(
             Benchmark benchmarkIn,
             int batchNumbersIn

@@ -2,7 +2,7 @@ package de.hpi.debs.aqi;
 
 import de.hpi.debs.Event;
 import de.hpi.debs.MeasurementOwn;
-import de.hpi.debs.slicing.ParticelWindowState;
+import de.hpi.debs.slicing.ParticleWindowState;
 import de.hpi.debs.slicing.Slice;
 
 import org.apache.flink.api.common.state.ValueState;
@@ -13,21 +13,18 @@ import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.util.Collector;
 
-import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 
 public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, MeasurementOwn, AQIValue24h> {
 
-    private ValueState<ParticelWindowState> state;
+    private ValueState<ParticleWindowState> state;
 
+    public final long start;
     public static final long v24hInSec = 86400;
     public static final long v5minInSec = 300;
     public static final int vDeltaIdx = (int)(v24hInSec / v5minInSec) - 1;
 
-    public AQIValue24hProcessOperator(KeyedProcessFunction<String, MeasurementOwn, AQIValue24h> function) {
-        super(function);
-    }
-
-    public AQIValue24hProcessOperator() {
+    public AQIValue24hProcessOperator(long start) {
         super(
             new KeyedProcessFunction<>() {
                 @Override
@@ -36,16 +33,19 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
                 }
             }
         );
+
+        this.start = start;
     }
 
     @Override
-    public void open() throws IOException {
-        state = getRuntimeContext().getState(new ValueStateDescriptor<>("state", ParticelWindowState.class));
-        state.update(new ParticelWindowState((String)getCurrentKey()));
+    public void open() {
+        state = getRuntimeContext().getState(new ValueStateDescriptor<>("state", ParticleWindowState.class));
     }
 
     @Override
     public void processElement(StreamRecord<MeasurementOwn> value) throws Exception {
+        if (state.value() == null)
+            state.update(new ParticleWindowState((String) getCurrentKey(), start, start + v5minInSec));
 
         if (state.value().getLastWatermark() < value.getTimestamp()) // ignore late events
             return;
@@ -79,7 +79,7 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
         long lWatermark = state.value().getLastWatermark();
         String curCity = (String)getCurrentKey();
 
-        ParticelWindowState window = state.value();
+        ParticleWindowState window = state.value();
 
         if (window.getSlicesNr() < 0) { // window has no particle measures yet
             output.collect(new StreamRecord<>(new AQIValue24h(
@@ -151,8 +151,12 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
                 deltaWindowCount2 -= preStart2.getCount();
             }
 
-            window.getP1Slice(i).addToWindow(deltaWindowSum1, deltaWindowCount1);
-            window.getP2Slice(i).addToWindow(deltaWindowSum2, deltaWindowCount2);
+            try {
+                window.getP1Slice(i).addToWindow(deltaWindowSum1, deltaWindowCount1);
+                window.getP2Slice(i).addToWindow(deltaWindowSum2, deltaWindowCount2);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
             float avgP1 = (float) window.getP1Slice(i).getWindowAvg();
             float avgP2 = (float) window.getP2Slice(i).getWindowAvg();

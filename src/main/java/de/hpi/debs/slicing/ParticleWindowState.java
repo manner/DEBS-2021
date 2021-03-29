@@ -2,20 +2,20 @@ package de.hpi.debs.slicing;
 
 import java.util.ArrayList;
 
-public class ParticelWindowState {
+public class ParticleWindowState {
     protected ArrayList<Slice> slicesP1;
     protected ArrayList<Slice> slicesP2;
     protected long lastWatermark;
     protected int slicesNr;
     protected final String city;
 
-    public ParticelWindowState(String city) {
+    public ParticleWindowState(String city, long start, long step) {
         this.slicesP1 = new ArrayList<>();
-        this.slicesP1.add(new Slice(0, 0));
+        this.slicesP1.add(new Slice(start, start + step));
         this.slicesP2 = new ArrayList<>();
-        this.slicesP2.add(new Slice(0, 0));
-        this.lastWatermark = 0L;
-        this.slicesNr = 0;
+        this.slicesP2.add(new Slice(start, start + step));
+        this.lastWatermark = Long.MAX_VALUE;
+        this.slicesNr = 1;
         this.city = city;
     }
 
@@ -69,5 +69,16 @@ public class ParticelWindowState {
         slicesP2.remove(0);
 
         --slicesNr;
+    }
+
+    @Override
+    public String toString() {
+        return "ParticleWindowState{" +
+                "slicesP1=" + slicesP1.toString() +
+                ", slicesP2=" + slicesP2.toString() +
+                ", lastWatermark=" + lastWatermark +
+                ", slicesNr=" + slicesNr +
+                ", city=" + city +
+                '}';
     }
 }

@@ -148,7 +148,7 @@ public class Slice {
      */
     @Override
     public String toString() {
-        return "RollingSum{" +
+        return "Slice{" +
                 "events=" + events +
                 ", sum=" + sum +
                 ", count=" + count +
