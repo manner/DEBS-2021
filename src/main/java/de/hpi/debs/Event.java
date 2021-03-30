@@ -21,7 +21,7 @@ public class Event {
     public String toString() {
         return "Event{" +
                 "value=" + value +
-                ", timestamp=" + new Date(timestamp * 1000) +
+                ", timestamp=" + new Date(timestamp) +
                 '}';
     }
 }

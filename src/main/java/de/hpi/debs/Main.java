@@ -1,12 +1,22 @@
 package de.hpi.debs;
 
-import de.hpi.debs.aqi.*;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
+import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
+import de.hpi.debs.aqi.AQIImprovement;
+import de.hpi.debs.aqi.AQIImprovementProcessor;
+import de.hpi.debs.aqi.AQITop50Improvements;
+import de.hpi.debs.aqi.AQIValue24h;
+import de.hpi.debs.aqi.AQIValue5d;
+import de.hpi.debs.aqi.AQIValueProcessor;
+import de.hpi.debs.aqi.AQIValueRollingPostProcessor;
+import de.hpi.debs.aqi.AQIValueRollingPreProcessor;
+import de.hpi.debs.aqi.AverageAQIAggregate;
+import de.hpi.debs.serializer.LocationSerializer;
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.BenchmarkConfiguration;
 import de.tum.i13.bandency.ChallengerGrpc;
@@ -14,11 +24,6 @@ import de.tum.i13.bandency.Locations;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Date;
 
 public class Main {
@@ -53,7 +58,7 @@ public class Main {
         Benchmark newBenchmark = challengeClient.createNewBenchmark(bc);
 
         // Get the locations
-        Locations locations = getLocations(challengeClient, newBenchmark);
+        Locations locations = LocationSerializer.getLocations(challengeClient, newBenchmark);
         locationRetriever = new LocationRetriever(locations);
         //System.out.println(locations);
 
@@ -62,23 +67,23 @@ public class Main {
         DataStream<MeasurementOwn> lastYearCities = cities.filter(MeasurementOwn::isLastYear);
         DataStream<MeasurementOwn> currentYearCities = cities.filter(MeasurementOwn::isCurrentYear);
 
-        DataStream<AQIValue24h> aqiStreamCurrentYear = currentYearCities
+        DataStream<AQIValue24h> aqiStreamCurrentYearOne = currentYearCities
                 .keyBy(MeasurementOwn::getCity)
-                .transform(
-                        "AQIValue24h",
-                        TypeInformation.of(AQIValue24h.class),
-                        new AQIValue24hProcessOperator(1577833200)
-                );
+                .process(new AQIValueRollingPreProcessor());
+
+        DataStream<AQIValue24h> aqiStreamCurrentYearTwo = currentYearCities
+                .keyBy(MeasurementOwn::getCity)
+                .window(SlidingEventTimeWindows.of(Time.hours(24), Time.minutes(5)))
+                .aggregate(new AverageAQIAggregate(), new AQIValueProcessor());
+
+        DataStream<AQIValue24h> aqiStreamCurrentYearUnion = aqiStreamCurrentYearOne.union(aqiStreamCurrentYearTwo);
 
         DataStream<AQIValue24h> aqiStreamLastYear = lastYearCities
                 .keyBy(MeasurementOwn::getCity)
-                .transform(
-                        "AQIValue24h",
-                        TypeInformation.of(AQIValue24h.class),
-                        new AQIValue24hProcessOperator(1577833200)
-                );
+                .window(SlidingEventTimeWindows.of(Time.hours(24), Time.minutes(5)))
+                .aggregate(new AverageAQIAggregate(), new AQIValueProcessor());
 
-        DataStream<AQIValue5d> fiveDayStreamCurrentYear = aqiStreamCurrentYear // need more attributes
+        DataStream<AQIValue5d> fiveDayStreamCurrentYear = aqiStreamCurrentYearUnion // need more attributes
                 .keyBy(AQIValue24h::getCity)
                 .process(new AQIValueRollingPostProcessor());
 
@@ -89,8 +94,17 @@ public class Main {
         DataStream<AQIImprovement> fiveDayImprovement = fiveDayStreamCurrentYear
                 .keyBy(AQIValue5d::getCity)
                 .intervalJoin(fiveDayStreamLastYear.keyBy(AQIValue5d::getCity))
-                .between(Time.days(365), Time.days(365))
+                .between(Time.days(-365), Time.days(-365))
                 .process(new AQIImprovementProcessor());
+
+        DataStream<AQIImprovement> top50 = fiveDayImprovement
+                .keyBy(AQIImprovement::getTimestamp)
+//                .window(GlobalWindows.create())
+//                .trigger(new WatermarkTrigger())
+                .window(TumblingEventTimeWindows.of(Time.minutes(5)))
+                .process(new AQITop50Improvements());
+
+        top50.print();
 
         //seven day window is little bit different than the five day window and will not use the "rolling" processor
 
@@ -104,40 +118,6 @@ public class Main {
         System.out.println("ended Benchmark");
     }
 
-    public static Locations getLocations(ChallengerGrpc.ChallengerBlockingStub client, Benchmark benchmark) {
-        Locations locations;
-        String locationFileName = "./locations.ser";
-        if (new File(locationFileName).isFile()) {
-            locations = readLocationsFromFile(locationFileName);
-        } else {
-            locations = client.getLocations(benchmark);
-            saveLocationsToFile(locationFileName, locations);
-        }
-        return locations;
-    }
 
-    public static Locations readLocationsFromFile(String locationFileName) {
-        Locations locations = null;
-        try (
-                FileInputStream streamIn = new FileInputStream(locationFileName);
-                ObjectInputStream objectinputstream = new ObjectInputStream(streamIn)
-        ) {
-            locations = (Locations) objectinputstream.readObject();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return locations;
-    }
-
-    private static void saveLocationsToFile(String locationFileName, Locations locations) {
-        try (
-                FileOutputStream fos = new FileOutputStream(locationFileName, true);
-                ObjectOutputStream oos = new ObjectOutputStream(fos)
-        ) {
-            oos.writeObject(locations);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
 }
 

@@ -10,7 +10,7 @@ import java.util.TimeZone;
 
 public class MeasurementOwn implements Serializable {
 
-    private static final LocalDateTime FIRST_OF_2019 = LocalDateTime.of(2020, Month.JANUARY, 1, 0, 0);
+    private static final LocalDateTime FIRST_OF_2020 = LocalDateTime.of(2020, Month.JANUARY, 1, 0, 0);
     private final float p1;
     private final float p2;
 
@@ -21,6 +21,8 @@ public class MeasurementOwn implements Serializable {
 
     private String city;
 
+    private final boolean isWatermark;
+
     public MeasurementOwn(float p1, float p2, float latitude, float longitude, long timestamp, String city) {
         this.p1 = p1;
         this.p2 = p2;
@@ -28,6 +30,17 @@ public class MeasurementOwn implements Serializable {
         this.longitude = longitude;
         this.timestamp = timestamp;
         this.city = city;
+        this.isWatermark = false;
+    }
+
+    public MeasurementOwn(float p1, float p2, float latitude, float longitude, long timestamp, String city, boolean watermark) {
+        this.p1 = p1;
+        this.p2 = p2;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.timestamp = timestamp;
+        this.city = city;
+        this.isWatermark = watermark;
     }
 
     public static MeasurementOwn fromMeasurement(Measurement m, String city) {
@@ -36,16 +49,31 @@ public class MeasurementOwn implements Serializable {
                 m.getP2(),
                 m.getLatitude(),
                 m.getLongitude(),
-                m.getTimestamp().getSeconds(),
+                m.getTimestamp().getSeconds() * 1000,
                 city);
     }
 
+    public static MeasurementOwn fromMeasurement(Measurement m, String city, boolean watermark) {
+        return new MeasurementOwn(
+                m.getP1(),
+                m.getP2(),
+                m.getLatitude(),
+                m.getLongitude(),
+                m.getTimestamp().getSeconds() * 1000,
+                city,
+                watermark);
+    }
+
     public boolean isLastYear() {
-        return getLocalDateTimeStamp().isBefore(FIRST_OF_2019);
+        return getLocalDateTimeStamp().isBefore(FIRST_OF_2020);
     }
 
     public boolean isCurrentYear() {
         return !isLastYear();
+    }
+
+    public boolean isWatermark() {
+        return isWatermark;
     }
 
     public String getCity() {
@@ -79,7 +107,7 @@ public class MeasurementOwn implements Serializable {
     }
 
     public LocalDateTime getLocalDateTimeStamp() {
-        return LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), TimeZone.getTimeZone("GMT").toZoneId());
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), TimeZone.getTimeZone("GMT").toZoneId());
     }
 
     @Override
@@ -91,6 +119,7 @@ public class MeasurementOwn implements Serializable {
                 ", latitude=" + latitude +
                 ", longitude=" + longitude +
                 ", timestamp=" + getLocalDateTimeStamp().toString() +
+                ", isWatermark=" + isWatermark +
                 ", city='" + city + '\'' +
                 '}';
     }

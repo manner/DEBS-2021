@@ -3,6 +3,7 @@ package de.hpi.debs;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
 
+import de.hpi.debs.serializer.BatchSerializer;
 import de.tum.i13.bandency.Batch;
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.Measurement;
@@ -15,8 +16,6 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
     private int cnt = 0;
     private int batchNumbers;
     private Benchmark benchmark;
-
-    public static long start;
 
     public StreamGenerator(
             Benchmark benchmarkIn,
@@ -33,7 +32,8 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
         Optional<String> city;
 
         while (running) {
-            Batch batch = Main.challengeClient.nextBatch(benchmark);
+//            Batch batch = Main.challengeClient.nextBatch(benchmark);
+            Batch batch = BatchSerializer.getBatch(Main.challengeClient, benchmark, cnt);
 
             if (batch.getLast()) { // Stop when we get the last batch
                 // System.out.println("Received last batch, finished!");
@@ -45,30 +45,45 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
             List<Measurement> currentYearList = batch.getCurrentList();
             List<Measurement> lastYearList = batch.getLastyearList();
 
-            for (Measurement m : currentYearList) {
-                city = Main.locationRetriever.findCityForLocation(new PointOwn(m));
+            for (int i = 0; i < currentYearList.size() - 1; i++) {
+
+                city = Main.locationRetriever.findCityForLocation(
+                        new PointOwn(currentYearList.get(i))
+                );
 
                 if (city.isPresent()) {
                     context.collectWithTimestamp(
-                            MeasurementOwn.fromMeasurement(m, city.get()),
-                            m.getTimestamp().getSeconds()
+                            MeasurementOwn.fromMeasurement(currentYearList.get(i), city.get()),
+                            currentYearList.get(i).getTimestamp().getSeconds() * 1000
                     );
                 }
             }
 
-            for (Measurement m : lastYearList) {
-                city = Main.locationRetriever.findCityForLocation(new PointOwn(m));
+            for (int i = 0; i < lastYearList.size() - 1; i++) {
+
+                city = Main.locationRetriever.findCityForLocation(
+                        new PointOwn(lastYearList.get(i))
+                );
 
                 if (city.isPresent()) {
                     context.collectWithTimestamp(
-                            MeasurementOwn.fromMeasurement(m, city.get()),
-                            m.getTimestamp().getSeconds()
+                            MeasurementOwn.fromMeasurement(lastYearList.get(i), city.get()),
+                            lastYearList.get(i).getTimestamp().getSeconds() * 1000
                     );
                 }
             }
 
             // emit watermark
-            context.emitWatermark(new Watermark(currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds()));
+            city = Main.locationRetriever.findCityForLocation(
+                    new PointOwn(currentYearList.get(currentYearList.size() - 1))
+            );
+
+            context.collectWithTimestamp(
+                    MeasurementOwn.fromMeasurement(currentYearList.get(currentYearList.size() - 1), city.orElse("no"), true),
+                    currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds() * 1000
+            );
+
+            context.emitWatermark(new Watermark(currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds() * 1000));
 
             // System.out.println("Processed batch #" + cnt);
             ++cnt;

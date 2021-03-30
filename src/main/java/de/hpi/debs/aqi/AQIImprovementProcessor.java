@@ -3,9 +3,12 @@ package de.hpi.debs.aqi;
 import org.apache.flink.streaming.api.functions.co.ProcessJoinFunction;
 import org.apache.flink.util.Collector;
 
+import java.util.Date;
+
 public class AQIImprovementProcessor extends ProcessJoinFunction<AQIValue5d, AQIValue5d, AQIImprovement> {
     @Override
-    public void processElement(AQIValue5d left, AQIValue5d right, Context ctx, Collector<AQIImprovement> out) throws Exception {
-        // TODO
+    public void processElement(AQIValue5d currentYear, AQIValue5d lastYear, Context ctx, Collector<AQIImprovement> out) throws Exception {
+        double improvement = lastYear.getAQI() - currentYear.getAQI();
+        out.collect(new AQIImprovement(improvement, currentYear.getTimestamp(), currentYear.getCity(), currentYear.isWatermark()));
     }
 }

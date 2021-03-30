@@ -33,10 +33,11 @@ public class AQIValue24h {
 
     @Override
     public String toString() {
-        return "AQIValue{" +
+        return "AQIValue24h{" +
                 "AQI=" + aqi +
-                ", timestamp=" + new Date(timestamp * 1000) +
+                ", timestamp=" + new Date(timestamp).toGMTString() +
                 ", city='" + city + '\'' +
+                ", isWatermark='" + isWatermark() +
                 '}';
     }
 }
