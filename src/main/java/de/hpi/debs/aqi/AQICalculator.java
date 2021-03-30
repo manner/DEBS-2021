@@ -28,6 +28,9 @@ public class AQICalculator {
 
         put(350.5f, 401);
         put(500.4f, 500);
+
+        put(500.5f, 501);
+        put(99999.9f, 999);
     }};
 
     private static final Map<Float, Integer> AQI_10_Map = new HashMap<>() {{
@@ -51,6 +54,9 @@ public class AQICalculator {
 
         put(505f, 401);
         put(604f, 500);
+
+        put(605f, 501);
+        put(99999f, 999);
     }};
 
     private static final NavigableMap<Float, Integer> AQI_10 = new TreeMap<>(AQI_10_Map);
