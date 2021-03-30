@@ -13,6 +13,6 @@ public class AQIValueProcessor extends ProcessWindowFunction<Integer, AQIValue24
             Collector<AQIValue24h> out
     ) {
         int AQI = elements.iterator().next();
-        out.collect(new AQIValue24h(AQI, context.window().getEnd(), city));
+        out.collect(new AQIValue24h(AQI, context.window().getEnd(), city, true));
     }
 }

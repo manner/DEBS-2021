@@ -106,7 +106,7 @@ public class Slice {
     }
 
     /**
-     * Getter function for average value of window.
+     * Getter function for average value of a window.
      *
      * @return Average of window.
      */

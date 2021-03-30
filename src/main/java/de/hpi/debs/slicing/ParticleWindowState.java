@@ -7,15 +7,17 @@ public class ParticleWindowState {
     protected ArrayList<Slice> slicesP2;
     protected long lastWatermark;
     protected int slicesNr;
+    protected int checkpoint;
     protected final String city;
 
-    public ParticleWindowState(String city, long start, long step) {
+    public ParticleWindowState(String city, long start, long end) {
         this.slicesP1 = new ArrayList<>();
-        this.slicesP1.add(new Slice(start, start + step));
+        this.slicesP1.add(new Slice(start, end));
         this.slicesP2 = new ArrayList<>();
-        this.slicesP2.add(new Slice(start, start + step));
-        this.lastWatermark = Long.MAX_VALUE;
+        this.slicesP2.add(new Slice(start, end));
+        this.lastWatermark = start;
         this.slicesNr = 1;
+        this.checkpoint = 0;
         this.city = city;
     }
 
@@ -27,8 +29,20 @@ public class ParticleWindowState {
         return lastWatermark;
     }
 
+    public void updateLastWatermark(long lw) {
+        lastWatermark = lw;
+    }
+
     public int getSlicesNr() {
         return slicesNr;
+    }
+
+    public int getCheckpoint() {
+        return checkpoint;
+    }
+
+    public void incCheckpoint() {
+        this.checkpoint++;
     }
 
     public long getEndOfSlice(int index) {
@@ -61,14 +75,22 @@ public class ParticleWindowState {
         slicesP2.get(index).add(p2, ts);
     }
 
-    public void removeSlice() throws Exception {
-        if (slicesP1.isEmpty()) // debug only
-            throw new Exception("there are no slices left");
+    public void removeSlices(long ts) {
+        while (!slicesP1.isEmpty() && slicesP1.get(0).getEnd() <= ts) {
+            slicesP1.remove(0);
+            slicesP2.remove(0);
 
-        slicesP1.remove(0);
-        slicesP2.remove(0);
+            --slicesNr;
+        }
+    }
 
-        --slicesNr;
+    public void removeEmptyTail() {
+        while (!slicesP1.isEmpty() && slicesP1.get(0).isEmpty()) {
+            slicesP1.remove(0);
+            slicesP2.remove(0);
+
+            --slicesNr;
+        }
     }
 
     @Override

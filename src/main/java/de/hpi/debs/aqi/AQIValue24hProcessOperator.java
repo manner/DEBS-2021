@@ -13,8 +13,6 @@ import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.util.Collector;
 
-import java.util.concurrent.ExecutionException;
-
 public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, MeasurementOwn, AQIValue24h> {
 
     private ValueState<ParticleWindowState> state;
@@ -22,6 +20,7 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
     public final long start;
     public static final long v24hInSec = 86400;
     public static final long v5minInSec = 300;
+    public static final long v10minInSec = 2 * v5minInSec;
     public static final int vDeltaIdx = (int)(v24hInSec / v5minInSec) - 1;
 
     public AQIValue24hProcessOperator(long start) {
@@ -44,52 +43,49 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
 
     @Override
     public void processElement(StreamRecord<MeasurementOwn> value) throws Exception {
-        if (state.value() == null)
-            state.update(new ParticleWindowState((String) getCurrentKey(), start, start + v5minInSec));
-
-        if (state.value().getLastWatermark() < value.getTimestamp()) // ignore late events
+        if (state.value() != null && value.getTimestamp() < state.value().getLastWatermark()) // ignore late events
             return;
 
+        if (state.value() == null) {
+            long newStart = (value.getTimestamp() - start) % v5minInSec;
+            newStart = value.getTimestamp() - newStart; // get correct start of window in case city measures very late
+            state.update(new ParticleWindowState(
+                    (String) getCurrentKey(),
+                    newStart,
+                    newStart + v5minInSec
+            ));
+        }
+
         // add tuple that actually has a matching city
-        int index = state.value().getSlicesNr() - 1;
-        int in = state.value().in(index, value.getTimestamp());
+        int i = state.value().getSlicesNr() - 1;
+        int in = state.value().in(i, value.getTimestamp());
 
         // search for correct slice
         while (in != 0) {
             if (in < 0) { // go one slice to the past
-                --index;
-                if (index < 0) // debug only
-                    throw new Exception("removed one slice in the past that I seem to need again");
-            } else { // add new slice to end
-                state.value().addSlice(v5minInSec);
+                --i;
+            } else {
+                state.value().addSlice(v5minInSec); // add new slice to end
 
-                ++index;
+                ++i;
             }
 
-            in = state.value().in(index, value.getTimestamp());
+            in = state.value().in(i, value.getTimestamp());
         }
 
         // update slice by new event
-        state.value().addMeasure(index, value.getValue().getP1(), value.getValue().getP2(), value.getTimestamp());
+        state.value().addMeasure(i, value.getValue().getP1(), value.getValue().getP2(), value.getTimestamp());
     }
 
     @Override
     public void processWatermark(Watermark watermark) throws Exception {
-        long wm = watermark.getTimestamp();
-        long lWatermark = state.value().getLastWatermark();
-        String curCity = (String)getCurrentKey();
-
-        ParticleWindowState window = state.value();
-
-        if (window.getSlicesNr() < 0) { // window has no particle measures yet
-            output.collect(new StreamRecord<>(new AQIValue24h(
-                    -1, // empty list should be returned
-                    wm,
-                    curCity
-            )));
-
+        if (state == null || state.value() == null)
             return;
-        }
+
+        long wm = watermark.getTimestamp();
+        long lw = state.value().getLastWatermark();
+        state.value().updateLastWatermark(wm);
+        ParticleWindowState window = state.value();
 
         double deltaWindowSum1;
         int deltaWindowCount1;
@@ -101,84 +97,81 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
         Slice preStart2;
         int startIdx;
         long curWindowEnd;
+        boolean active;
 
-        // emit windows that need to be emitted
+        // go to first slice that need to emit window result
         int i = window.getSlicesNr() - 1;
 
-        // go to slice that need to emit a window first
-        while (lWatermark < window.getEndOfSlice(i)) {
+        while (0 < i && lw < window.getEndOfSlice(i))
             --i;
-            if (i < 0) // debug only
-                throw new Exception("run to negative slice");
-        }
 
         curWindowEnd = window.getEndOfSlice(i);
 
-        if (i == 0 && curWindowEnd < wm) { // only avg from first slice will be emitted
+        // emit results of windows before the watermark
+        while (curWindowEnd < wm) {
+            active = false;
+
+            if (0 < i) {
+                if (window.getCheckpoint() < i) { // make sure that window is not already using pre-aggregate results
+                    preWindow1 = window.getP1Slice(i - 1);
+                    preWindow2 = window.getP2Slice(i - 1);
+
+                    deltaWindowSum1 = preWindow1.getWindowSum();
+                    deltaWindowCount1 = preWindow1.getWindowCount();
+                    deltaWindowSum2 = preWindow2.getWindowSum();
+                    deltaWindowCount2 = preWindow2.getWindowCount();
+
+                    startIdx = i - vDeltaIdx - 1;
+
+                    if (0 <= startIdx) { // check if there is a slice that we need to subtract
+                        preStart1 = window.getP1Slice(startIdx);
+                        preStart2 = window.getP2Slice(startIdx);
+
+                        deltaWindowSum1 -= preStart1.getSum();
+                        deltaWindowCount1 -= preStart1.getCount();
+                        deltaWindowSum2 -= preStart2.getSum();
+                        deltaWindowCount2 -= preStart2.getCount();
+                    }
+
+                    window.getP1Slice(i).addToWindow(deltaWindowSum1, deltaWindowCount1);
+                    window.getP2Slice(i).addToWindow(deltaWindowSum2, deltaWindowCount2);
+                    window.incCheckpoint();
+                }
+
+                if (!window.getP1Slice(i - 1).isEmpty())
+                    active = true;
+            }
+
+            if (!window.getP1Slice(i).isEmpty()) // check if window is active
+                active = true;
+
             float avgP1 = (float) window.getP1Slice(i).getWindowAvg();
             float avgP2 = (float) window.getP2Slice(i).getWindowAvg();
 
-            output.collect(new StreamRecord<>(new AQIValue24h(
-                    AQICalculator.getAQI(avgP2, avgP1),
-                    curWindowEnd,
-                    curCity
-            )));
+            if (lw < curWindowEnd)
+                output.collect(new StreamRecord<>(new AQIValue24h(
+                        AQICalculator.getAQI(avgP2, avgP1),
+                        curWindowEnd,
+                        (String) getCurrentKey(),
+                        active
+                )));
 
             ++i;
 
-            curWindowEnd = window.getEndOfSlice(i);
-        }
-
-        for (; curWindowEnd < wm; i++) {
-            // pre-aggregate window
-            preWindow1 = window.getP1Slice(i - 1);
-            preWindow2 = window.getP2Slice(i - 1);
-
-            deltaWindowSum1 = preWindow1.getWindowSum();
-            deltaWindowCount1 = preWindow1.getWindowCount();
-            deltaWindowSum2 = preWindow2.getWindowSum();
-            deltaWindowCount2 = preWindow2.getWindowCount();
-
-            startIdx = i - vDeltaIdx - 1;
-
-            if (0 <= startIdx) { // check if we exited initial phase, in the initial phase consecutive windows are sum of all previous windows
-                preStart1 = window.getP1Slice(startIdx);
-                preStart2 = window.getP2Slice(startIdx);
-
-                deltaWindowSum1 -= preStart1.getSum();
-                deltaWindowCount1 -= preStart1.getCount();
-                deltaWindowSum2 -= preStart2.getSum();
-                deltaWindowCount2 -= preStart2.getCount();
-            }
-
-            try {
-                window.getP1Slice(i).addToWindow(deltaWindowSum1, deltaWindowCount1);
-                window.getP2Slice(i).addToWindow(deltaWindowSum2, deltaWindowCount2);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            float avgP1 = (float) window.getP1Slice(i).getWindowAvg();
-            float avgP2 = (float) window.getP2Slice(i).getWindowAvg();
-
-            output.collect(new StreamRecord<>(new AQIValue24h(
-                    AQICalculator.getAQI(avgP2, avgP1),
-                    wm,
-                    (String)getCurrentKey()
-            )));
+            if (i == window.getSlicesNr()) // check if there where events received in the past v5minInSec
+                state.value().addSlice(v5minInSec);
 
             curWindowEnd = state.value().getEndOfSlice(i);
         }
 
-        // emit the "watermark window"
-        long watermarkWindowStart = wm - v24hInSec;
+        // emit "watermark window" if not already done
         deltaWindowSum1 = 0.0;
         deltaWindowCount1 = 0;
         deltaWindowSum2 = 0.0;
         deltaWindowCount2 = 0;
+        active = false;
 
-        if (0 < i) { // when we have a previous window that was emitted use it's aggregate
-            // pre-aggregate window
+        if (0 < i) { // use pre-aggregated results of previous windows if not already done
             preWindow1 = window.getP1Slice(i - 1);
             preWindow2 = window.getP2Slice(i - 1);
 
@@ -189,8 +182,7 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
 
             startIdx = i - vDeltaIdx - 1;
 
-            if (0 <= startIdx) { // check if we exited initial phase, in the initial phase consecutive windows are sum of all previous windows
-                // first remove events from first slice from window
+            if (0 <= startIdx) { // check if there is a slice that we need to subtract
                 preStart1 = window.getP1Slice(startIdx);
                 preStart2 = window.getP2Slice(startIdx);
 
@@ -199,25 +191,39 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
                 deltaWindowSum2 -= preStart2.getSum();
                 deltaWindowCount2 -= preStart2.getCount();
 
-                // then add events from first slice that belong to "watermark" window
-                for (Event event : window.getP1Slice(i).getEvents()) {
-                    if (watermarkWindowStart <= event.getTimestamp()) {
-                        deltaWindowSum1 += event.getValue();
-                        ++deltaWindowCount1;
+                long watermarkWindowStart = wm - v24hInSec;
+
+                for (Event event : window.getP1Slice(startIdx).getEvents()) {
+                    if (event.getTimestamp() < watermarkWindowStart) {
+                        deltaWindowSum1 -= event.getValue();
+                        --deltaWindowCount1;
                     }
                 }
 
-                for (Event event : window.getP2Slice(i).getEvents()) {
-                    if (watermarkWindowStart <= event.getTimestamp()) {
-                        deltaWindowSum2 += event.getValue();
-                        ++deltaWindowCount2;
+                for (Event event : window.getP2Slice(startIdx).getEvents()) {
+                    if (event.getTimestamp() < watermarkWindowStart) {
+                        deltaWindowSum2 -= event.getValue();
+                        --deltaWindowCount2;
                     }
                 }
+            }
 
+            // check if "watermark window" is active
+            if (!window.getP1Slice(i - 1).isEmpty())
+                active = true;
+
+            if (1 < i && !window.getP1Slice(i - 2).isEmpty()) {
+                long before10MinInSec = wm - v10minInSec;
+
+                for (Event event : window.getP1Slice(i - 2).getEvents())
+                    if (before10MinInSec <= event.getTimestamp()) {
+                        active = true;
+                        break;
+                    }
             }
         }
 
-        // add events from last slice that belong to "watermark" window
+        // add events from last slice that belong to "watermark window"
         for (Event event : window.getP1Slice(i).getEvents()) {
             if (event.getTimestamp() < wm) {
                 deltaWindowSum1 += event.getValue();
@@ -232,19 +238,30 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
             }
         }
 
-        float avgP1 = (float) deltaWindowSum1 / deltaWindowCount1;
-        float avgP2 = (float) deltaWindowSum1 / deltaWindowCount2;
+        if (!window.getP1Slice(i).isEmpty()) // check if window is active
+            active = true;
 
-        output.collect(new StreamRecord<>(new AQIValue24h(
-                AQICalculator.getAQI(avgP2, avgP1),
-                wm,
-                (String)getCurrentKey()
-        )));
+        if (0.0 < deltaWindowCount1 && 0.0 < deltaWindowCount2) { // check if in last v24hInSec where tuples emitted
+            float avgP1 = (float) deltaWindowSum1 / deltaWindowCount1;
+            float avgP2 = (float) deltaWindowSum2 / deltaWindowCount2;
 
-        // remove first slices that are already emitted and disjoint with all remaining windows that will be emitted in future
-        startIdx = i - vDeltaIdx - 1; // remove all slice that have smaller index
+            output.collect(new StreamRecord<>(new AQIValue24h(
+                    AQICalculator.getAQI(avgP2, avgP1),
+                    wm,
+                    (String) getCurrentKey(),
+                    active
+            )));
+        }
 
-        for (i = 0; i < startIdx; i++)
-            state.value().removeSlice();
+        // remove slices that are already emitted and disjoint with all remaining windows that will be emitted
+        state.value().removeSlices(wm - v24hInSec);
+
+        // additionally remove all empty slices from tail
+        state.value().removeEmptyTail();
+
+        // clear state for this key if there are no slices anymore
+        if (state.value().getSlicesNr() == 0) {
+            state.clear();
+        }
     }
 }
