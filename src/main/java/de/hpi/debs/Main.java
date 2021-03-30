@@ -16,6 +16,7 @@ import de.hpi.debs.aqi.AQIValueProcessor;
 import de.hpi.debs.aqi.AQIValueRollingPostProcessor;
 import de.hpi.debs.aqi.AQIValueRollingPreProcessor;
 import de.hpi.debs.aqi.AverageAQIAggregate;
+import de.hpi.debs.aqi.LongestStreakProcessor;
 import de.hpi.debs.serializer.LocationSerializer;
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.BenchmarkConfiguration;
@@ -99,12 +100,16 @@ public class Main {
 
         DataStream<AQIImprovement> top50 = fiveDayImprovement
                 .keyBy(AQIImprovement::getTimestamp)
-//                .window(GlobalWindows.create())
-//                .trigger(new WatermarkTrigger())
                 .window(TumblingEventTimeWindows.of(Time.minutes(5)))
                 .process(new AQITop50Improvements());
 
-        top50.print();
+//        top50.print();
+
+//        DataStream<LongestStreakProcessor.Streak> streaks = aqiStreamCurrentYearTwo
+//                .keyBy(AQIValue24h::getCity)
+//                .process(new LongestStreakProcessor());
+//        streaks.print();
+
 
         //seven day window is little bit different than the five day window and will not use the "rolling" processor
 

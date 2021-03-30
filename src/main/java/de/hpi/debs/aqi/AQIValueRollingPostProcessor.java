@@ -29,12 +29,16 @@ public class AQIValueRollingPostProcessor
         }
 
         // trigger average computation and emitting
-        if (rolling.value().isEmpty()) {
-            out.collect(new AQIValue5d(-1, value.getTimestamp(), value.isWatermark(), value.getCity()));
+        if (value.isWatermark()) {
+            if (rolling.value().isEmpty()) {
+                out.collect(new AQIValue5d(-1, value.getTimestamp(), true, value.getCity()));
+            } else {
+                double avgAQI = rolling.value().trigger(value.getTimestamp());
+                out.collect(new AQIValue5d(avgAQI, value.getTimestamp(), true, value.getCity()));
+            }
         } else {
             double avgAQI = rolling.value().trigger(value.getTimestamp());
-            out.collect(new AQIValue5d(avgAQI, value.getTimestamp(), value.isWatermark(), value.getCity()));
-
+            out.collect(new AQIValue5d(avgAQI, value.getTimestamp(), false, value.getCity()));
         }
 
     }

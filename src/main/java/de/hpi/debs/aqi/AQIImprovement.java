@@ -1,5 +1,7 @@
 package de.hpi.debs.aqi;
 
+import java.util.Date;
+
 public class AQIImprovement implements Comparable<AQIImprovement> {
     private double improvement;
     private long timestamp;
@@ -49,7 +51,7 @@ public class AQIImprovement implements Comparable<AQIImprovement> {
     public String toString() {
         return "AQIImprovement{" +
                 "improvement=" + improvement +
-                ", timestamp=" + timestamp +
+                ", timestamp=" + new Date(timestamp).toGMTString() +
                 ", city=" + city +
                 '}';
     }
