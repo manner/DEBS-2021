@@ -24,65 +24,65 @@ public class AQIValue24hProcessOperatorTests {
     }
 
     protected ArrayList<TestEvent> events = new ArrayList<>() {{
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 3, "Poland"), 3));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 99, "Berlin"), 99));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 200, "Berlin"), 200));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 250, "Poland"), 250));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 300, "Berlin"), 300));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 3, "Poland", false), 3));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 99,  "Berlin", false), 99));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 200, "Berlin", false), 200));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 250, "Poland", false), 250));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 300, "Berlin", false), 300));
         add(new TestEvent(null, 300)); // watermarks have data of null
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 511, "Berlin"), 511));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 511, "Berlin", false), 511));
         add(new TestEvent(null, 600));
         add(new TestEvent(null, 950));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 511, "Berlin"), 511));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 511, "Berlin", false), 511));
         add(new TestEvent(null, 1200));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 1501, "Berlin"), 1501));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 1531, "Poland"), 1531));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 1501, "Berlin", false), 1501));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 1531, "Poland", false), 1531));
         add(new TestEvent(null, 1500));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 1601, "Berlin"), 1601));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 1001, "Berlin"), 1001));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 1561, "Poland"), 1561));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 1551, "Berlin"), 1551));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 1611, "Berlin"), 1611));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 1601, "Berlin", false), 1601));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 1001, "Berlin", false), 1001));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 1561, "Poland", false), 1561));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 1551, "Berlin", false), 1551));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 1611, "Berlin", false), 1611));
         add(new TestEvent(null, 1900));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 1611, "Berlin"), 1611));
-        add(new TestEvent(new MeasurementOwn(10000.0F, 2.0F, 0, 0, 2001, "Berlin"), 2001));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 2000, "Poland"), 2000));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 2100, "Poland"), 2100));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 2030, "Poland"), 2030));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 2110, "Poland"), 2110));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 1999, "Poland"), 1999));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 2000, "Poland"), 2000));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 1611,  "Berlin", false), 1611));
+        add(new TestEvent(new MeasurementOwn(10000.0F, 2.0F, 0, 0, 2001, "Berlin", false), 2001));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 2000, "Poland", false), 2000));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 2100, "Poland", false), 2100));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 2030, "Poland", false), 2030));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 2110, "Poland", false), 2110));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 1999, "Poland", false), 1999));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 2000, "Poland", false), 2000));
         add(new TestEvent(null, 2200));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 2001, "Poland"), 2001));
-        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 2201, "Berlin"), 2201));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 2001, "Poland", false), 2001));
+        add(new TestEvent(new MeasurementOwn(1.0F, 2.0F, 0, 0, 2201, "Berlin", false), 2201));
         add(new TestEvent(null, 2900));
     }};
 
     // !attention! only one watermark for last key is emitted for all partitions, in this case we have only one partition
     protected ArrayList<AQIValue24h> groundTruthBerlin = new ArrayList<>() {{
-        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 300, "Berlin", true));
-        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 600, "Berlin", true));
-        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 900, "Berlin", true));
-        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 950, "Berlin", true));
-        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 1200, "Berlin", false));
-        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 1500, "Berlin", false));
-        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 1800, "Berlin", true));
-        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 1900, "Berlin", true));
-        add(new AQIValue24h(AQICalculator.getAQI(2, 10000), 2100, "Berlin", true));
-        add(new AQIValue24h(AQICalculator.getAQI(2, 10000), 2400, "Berlin", true));
-        add(new AQIValue24h(AQICalculator.getAQI(2, 10000), 2700, "Berlin", true));
-        add(new AQIValue24h(AQICalculator.getAQI(2, 10000), 2900, "Berlin", false));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 300, false, "Berlin", true));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 600, false, "Berlin", true));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 900, false, "Berlin", true));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 950, false, "Berlin", true));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 1200, false, "Berlin", false));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 1500, false, "Berlin", false));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 1800, false, "Berlin", true));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 1900, false, "Berlin", true));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 10000), 2100, false, "Berlin", true));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 10000), 2400, false, "Berlin", true));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 10000), 2700, false, "Berlin", true));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 10000), 2900, false, "Berlin", false));
     }};
 
     protected ArrayList<AQIValue24h> groundTruthPoland = new ArrayList<>() {{
-        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 300, "Poland", true));
-        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 600, "Poland", true));
-        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 900, "Poland", false));
-        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 1200, "Poland", false));
-        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 1500, "Poland", false));
-        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 1800, "Poland", true));
-        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 2100, "Poland", true));
-        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 2200, "Poland", true));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 300, false, "Poland", true));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 600, false, "Poland", true));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 900, false, "Poland", false));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 1200, false, "Poland", false));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 1500, false, "Poland", false));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 1800, false, "Poland", true));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 2100, false, "Poland", true));
+        add(new AQIValue24h(AQICalculator.getAQI(2, 1), 2200, false, "Poland", true));
     }};
 
     private static class EventKeySelector implements KeySelector<MeasurementOwn, String> {

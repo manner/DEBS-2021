@@ -1,22 +1,13 @@
 package de.hpi.debs;
 
+import de.hpi.debs.aqi.*;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
-import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
-import de.hpi.debs.aqi.AQIImprovement;
-import de.hpi.debs.aqi.AQIImprovementProcessor;
-import de.hpi.debs.aqi.AQITop50Improvements;
-import de.hpi.debs.aqi.AQIValue24h;
-import de.hpi.debs.aqi.AQIValue5d;
-import de.hpi.debs.aqi.AQIValueProcessor;
-import de.hpi.debs.aqi.AQIValueRollingPostProcessor;
-import de.hpi.debs.aqi.AQIValueRollingPreProcessor;
-import de.hpi.debs.aqi.AverageAQIAggregate;
-import de.hpi.debs.aqi.LongestStreakProcessor;
 import de.hpi.debs.serializer.LocationSerializer;
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.BenchmarkConfiguration;
@@ -33,6 +24,9 @@ public class Main {
     public static LocationRetriever locationRetriever;
 
     public static void main(String[] args) throws Exception {
+
+        long currentStart = 1577833200000L;
+        long lastStart = currentStart - (365 * 24 * 60 * 60 * 1000);
 
         ManagedChannel channel = ManagedChannelBuilder
                 .forAddress("challenge.msrg.in.tum.de", 5023)
@@ -68,23 +62,23 @@ public class Main {
         DataStream<MeasurementOwn> lastYearCities = cities.filter(MeasurementOwn::isLastYear);
         DataStream<MeasurementOwn> currentYearCities = cities.filter(MeasurementOwn::isCurrentYear);
 
-        DataStream<AQIValue24h> aqiStreamCurrentYearOne = currentYearCities
+        DataStream<AQIValue24h> aqiStreamCurrentYear = currentYearCities
                 .keyBy(MeasurementOwn::getCity)
-                .process(new AQIValueRollingPreProcessor());
-
-        DataStream<AQIValue24h> aqiStreamCurrentYearTwo = currentYearCities
-                .keyBy(MeasurementOwn::getCity)
-                .window(SlidingEventTimeWindows.of(Time.hours(24), Time.minutes(5)))
-                .aggregate(new AverageAQIAggregate(), new AQIValueProcessor());
-
-        DataStream<AQIValue24h> aqiStreamCurrentYearUnion = aqiStreamCurrentYearOne.union(aqiStreamCurrentYearTwo);
+                .transform(
+                        "AQIValue24hProcessOperator",
+                        TypeInformation.of(AQIValue24hProcessOperator.class),
+                        new AQIValue24hProcessOperator(currentStart)
+                );
 
         DataStream<AQIValue24h> aqiStreamLastYear = lastYearCities
                 .keyBy(MeasurementOwn::getCity)
-                .window(SlidingEventTimeWindows.of(Time.hours(24), Time.minutes(5)))
-                .aggregate(new AverageAQIAggregate(), new AQIValueProcessor());
+                .transform(
+                        "AQIValue24hProcessOperator",
+                        TypeInformation.of(AQIValue24hProcessOperator.class),
+                        new AQIValue24hProcessOperator(lastStart)
+                );
 
-        DataStream<AQIValue5d> fiveDayStreamCurrentYear = aqiStreamCurrentYearUnion // need more attributes
+        DataStream<AQIValue5d> fiveDayStreamCurrentYear = aqiStreamCurrentYear // need more attributes
                 .keyBy(AQIValue24h::getCity)
                 .process(new AQIValueRollingPostProcessor());
 

@@ -18,10 +18,10 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
     private ValueState<ParticleWindowState> state;
 
     public final long start;
-    public static final long v24hInSec = 86400;
-    public static final long v5minInSec = 300;
-    public static final long v10minInSec = 2 * v5minInSec;
-    public static final int vDeltaIdx = (int)(v24hInSec / v5minInSec) - 1;
+    public static final long v24hInMilliseconds = 86400000;
+    public static final long v5minInMilliseconds = 300000;
+    public static final long v10minInMilliseconds = 2 * v5minInMilliseconds;
+    public static final int vDeltaIdx = (int)(v24hInMilliseconds / v5minInMilliseconds) - 1;
 
     public AQIValue24hProcessOperator(long start) {
         super(
@@ -47,12 +47,12 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
             return;
 
         if (state.value() == null) {
-            long newStart = (value.getTimestamp() - start) % v5minInSec;
+            long newStart = (value.getTimestamp() - start) % v5minInMilliseconds;
             newStart = value.getTimestamp() - newStart; // get correct start of window in case city measures very late
             state.update(new ParticleWindowState(
                     (String) getCurrentKey(),
                     newStart,
-                    newStart + v5minInSec
+                    newStart + v5minInMilliseconds
             ));
         }
 
@@ -65,7 +65,7 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
             if (in < 0) { // go one slice to the past
                 --i;
             } else {
-                state.value().addSlice(v5minInSec); // add new slice to end
+                state.value().addSlice(v5minInMilliseconds); // add new slice to end
 
                 ++i;
             }
@@ -152,6 +152,7 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
                 output.collect(new StreamRecord<>(new AQIValue24h(
                         AQICalculator.getAQI(avgP2, avgP1),
                         curWindowEnd,
+                        false,
                         (String) getCurrentKey(),
                         active
                 )));
@@ -159,7 +160,7 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
             ++i;
 
             if (i == window.getSlicesNr()) // check if there where events received in the past v5minInSec
-                state.value().addSlice(v5minInSec);
+                state.value().addSlice(v5minInMilliseconds);
 
             curWindowEnd = state.value().getEndOfSlice(i);
         }
@@ -191,7 +192,7 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
                 deltaWindowSum2 -= preStart2.getSum();
                 deltaWindowCount2 -= preStart2.getCount();
 
-                long watermarkWindowStart = wm - v24hInSec;
+                long watermarkWindowStart = wm - v24hInMilliseconds;
 
                 for (Event event : window.getP1Slice(startIdx).getEvents()) {
                     if (event.getTimestamp() < watermarkWindowStart) {
@@ -213,7 +214,7 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
                 active = true;
 
             if (1 < i && !window.getP1Slice(i - 2).isEmpty()) {
-                long before10MinInSec = wm - v10minInSec;
+                long before10MinInSec = wm - v10minInMilliseconds;
 
                 for (Event event : window.getP1Slice(i - 2).getEvents())
                     if (before10MinInSec <= event.getTimestamp()) {
@@ -248,13 +249,14 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
             output.collect(new StreamRecord<>(new AQIValue24h(
                     AQICalculator.getAQI(avgP2, avgP1),
                     wm,
+                    true,
                     (String) getCurrentKey(),
                     active
             )));
         }
 
         // remove slices that are already emitted and disjoint with all remaining windows that will be emitted
-        state.value().removeSlices(wm - v24hInSec);
+        state.value().removeSlices(wm - v24hInMilliseconds);
 
         // additionally remove all empty slices from tail
         state.value().removeEmptyTail();

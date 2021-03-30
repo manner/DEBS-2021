@@ -6,21 +6,21 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
 
-import de.hpi.debs.RollingSum;
+//import de.hpi.debs.RollingSum;
 
 public class AQIValueRollingPostProcessor
         extends KeyedProcessFunction<String, AQIValue24h, AQIValue5d> {
 
-    private ValueState<RollingSum> rolling;
+    //private ValueState<RollingSum> rolling;
 
     @Override
     public void open(Configuration parameters) {
-        rolling = getRuntimeContext().getState(new ValueStateDescriptor<>("rolling", RollingSum.class));
+        //rolling = getRuntimeContext().getState(new ValueStateDescriptor<>("rolling", RollingSum.class));
     }
 
     @Override
     public void processElement(AQIValue24h value, Context ctx, Collector<AQIValue5d> out) throws Exception {
-        if (rolling.value() == null) {
+        /*if (rolling.value() == null) {
             rolling.update(new RollingSum(0.0, 432000 * 1000));
         }
 
@@ -39,7 +39,6 @@ public class AQIValueRollingPostProcessor
         } else {
             double avgAQI = rolling.value().trigger(value.getTimestamp());
             out.collect(new AQIValue5d(avgAQI, value.getTimestamp(), false, value.getCity()));
-        }
-
+        }*/
     }
 }
