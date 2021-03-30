@@ -31,6 +31,10 @@ public class AQIValue24h {
         return city;
     }
 
+    public boolean isGood() {
+        return aqi <= 50;
+    }
+
     @Override
     public String toString() {
         return "AQIValue24h{" +

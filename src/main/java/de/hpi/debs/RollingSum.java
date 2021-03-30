@@ -57,7 +57,7 @@ public class RollingSum {
                 --countAvg;
                 events.remove(i);
                 --i;
-            } else if (events.get(i).getTimestamp() >= watermark) {// Skip events that are ahead the watermark.
+            } else if (events.get(i).getTimestamp() > watermark) {// Skip events that are ahead the watermark.
                 sumAvg -= events.get(i).getValue();
                 --countAvg;
             }

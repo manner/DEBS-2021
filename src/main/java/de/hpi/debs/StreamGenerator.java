@@ -59,18 +59,16 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
                 }
             }
 
-            for (int i = 0; i < lastYearList.size() - 1; i++) {
+            for (Measurement measurement : lastYearList) {
 
                 city = Main.locationRetriever.findCityForLocation(
-                        new PointOwn(lastYearList.get(i))
+                        new PointOwn(measurement)
                 );
 
-                if (city.isPresent()) {
-                    context.collectWithTimestamp(
-                            MeasurementOwn.fromMeasurement(lastYearList.get(i), city.get()),
-                            lastYearList.get(i).getTimestamp().getSeconds() * 1000
-                    );
-                }
+                city.ifPresent(c -> context.collectWithTimestamp(
+                        MeasurementOwn.fromMeasurement(measurement, c),
+                        measurement.getTimestamp().getSeconds() * 1000
+                ));
             }
 
             // emit watermark

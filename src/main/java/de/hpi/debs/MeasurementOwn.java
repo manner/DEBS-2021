@@ -18,20 +18,8 @@ public class MeasurementOwn implements Serializable {
     private final float longitude;
 
     private final long timestamp;
-
-    private String city;
-
     private final boolean isWatermark;
-
-    public MeasurementOwn(float p1, float p2, float latitude, float longitude, long timestamp, String city) {
-        this.p1 = p1;
-        this.p2 = p2;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.timestamp = timestamp;
-        this.city = city;
-        this.isWatermark = false;
-    }
+    private String city;
 
     public MeasurementOwn(float p1, float p2, float latitude, float longitude, long timestamp, String city, boolean watermark) {
         this.p1 = p1;
@@ -50,7 +38,8 @@ public class MeasurementOwn implements Serializable {
                 m.getLatitude(),
                 m.getLongitude(),
                 m.getTimestamp().getSeconds() * 1000,
-                city);
+                city,
+                false);
     }
 
     public static MeasurementOwn fromMeasurement(Measurement m, String city, boolean watermark) {
@@ -80,7 +69,9 @@ public class MeasurementOwn implements Serializable {
         return city;
     }
 
-    public void setCity(String city) { this.city = city; }
+    public void setCity(String city) {
+        this.city = city;
+    }
 
     public float getP1() {
         return p1;
