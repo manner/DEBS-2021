@@ -66,7 +66,7 @@ public class Main {
                 .keyBy(MeasurementOwn::getCity)
                 .transform(
                         "AQIValue24hProcessOperator",
-                        TypeInformation.of(AQIValue24hProcessOperator.class),
+                        TypeInformation.of(AQIValue24h.class),
                         new AQIValue24hProcessOperator(currentStart)
                 );
 
@@ -74,7 +74,7 @@ public class Main {
                 .keyBy(MeasurementOwn::getCity)
                 .transform(
                         "AQIValue24hProcessOperator",
-                        TypeInformation.of(AQIValue24hProcessOperator.class),
+                        TypeInformation.of(AQIValue24h.class),
                         new AQIValue24hProcessOperator(lastStart)
                 );
 
