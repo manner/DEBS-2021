@@ -18,7 +18,7 @@ public class MeasurementOwn implements Serializable {
     private final float longitude;
 
     private final long timestamp;
-    private final boolean isWatermark;
+    private boolean isWatermark;
     private String city;
 
     public MeasurementOwn(float p1, float p2, float latitude, float longitude, long timestamp, String city, boolean watermark) {
@@ -99,6 +99,10 @@ public class MeasurementOwn implements Serializable {
 
     public LocalDateTime getLocalDateTimeStamp() {
         return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), TimeZone.getTimeZone("GMT").toZoneId());
+    }
+
+    public void setIsWatermark() {
+        isWatermark = true;
     }
 
     @Override

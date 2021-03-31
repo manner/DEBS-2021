@@ -21,7 +21,8 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
         Streak streak = streakValueState.value();
 
         if (streak == null) {
-            streakValueState.update(new Streak(aqiValue.getCity()));
+            streak = new Streak(aqiValue.getCity());
+            streakValueState.update(streak);
         }
 
         if (aqiValue.isGood()) {
@@ -33,7 +34,6 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
         }
 
         streak.setTimestampLastMeasurement(aqiValue.getTimestamp());
-        System.out.println(streak);
         streakValueState.update(streak);
 
         if (aqiValue.isWatermark()) {
