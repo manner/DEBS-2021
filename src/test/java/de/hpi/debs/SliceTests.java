@@ -16,9 +16,13 @@ public class SliceTests {
             super(start, end);
         }
 
-        public ArrayList<Event> getEvents() { return events; }
+        public ArrayList<Event> getEvents() {
+            return events;
+        }
 
-        public long getLength() { return end - start; }
+        public long getLength() {
+            return end - start;
+        }
     }
 
     protected ArrayList<Event> events = new ArrayList<>() {{
@@ -35,7 +39,7 @@ public class SliceTests {
     }};
 
     @Test
-    public void testSumming() {
+    public void summingTest() {
         SliceTestClass rs = new SliceTestClass(0, 1000);
 
         assertTrue(rs.getEvents().isEmpty());
@@ -55,11 +59,13 @@ public class SliceTests {
         assertEquals(events.get(8).getTimestamp(), rs.getEvents().get(2).getTimestamp());
         assertEquals(30.0, rs.getSum());
         assertEquals(3, rs.getCount());
+        assertEquals(30.0, rs.getWindowSum());
+        assertEquals(3, rs.getWindowCount());
         assertEquals(1000, rs.getLength());
     }
 
     @Test
-    public void testTrigger() {
+    public void windowAverageTest() {
         SliceTestClass rs = new SliceTestClass(0, 1000);
 
         for (Event event : events)
@@ -72,9 +78,11 @@ public class SliceTests {
 
         avg /= 10.0;
 
-        assertEquals(avg, rs.getWindowAvg());
         assertEquals(100.0, rs.getSum());
         assertEquals(10, rs.getCount());
+        assertEquals(100.0, rs.getWindowSum());
+        assertEquals(10, rs.getWindowCount());
+        assertEquals(avg, rs.getWindowAvg());
         assertEquals(1000, rs.getLength());
 
         for (int i = 0; i < 10; i++) {
@@ -85,5 +93,26 @@ public class SliceTests {
             );
             assertEquals(events.get(i).getTimestamp(), rs.getEvents().get(i).getTimestamp());
         }
+    }
+
+    @Test
+    public void addToWindowTest() {
+        SliceTestClass rs = new SliceTestClass(0, 1000);
+
+        rs.add(10, 0);
+        rs.add(10, 3);
+        rs.addToWindow(1000, 10);
+
+        assertEquals(20, rs.getSum());
+        assertEquals(2, rs.getCount());
+        assertEquals(1020, rs.getWindowSum());
+        assertEquals(12, rs.getWindowCount());
+        assertEquals(1020.0 / 12.0, rs.getWindowAvg());
+        assertEquals(1000, rs.getLength());
+
+        assertEquals(10, rs.getEvents().get(0).getValue());
+        assertEquals(0, rs.getEvents().get(0).getTimestamp());
+        assertEquals(10, rs.getEvents().get(1).getValue());
+        assertEquals(3, rs.getEvents().get(1).getTimestamp());
     }
 }

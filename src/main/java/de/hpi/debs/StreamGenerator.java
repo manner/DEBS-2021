@@ -54,7 +54,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
                 if (city.isPresent()) {
                     context.collectWithTimestamp(
                             MeasurementOwn.fromMeasurement(currentYearList.get(i), city.get()),
-                            currentYearList.get(i).getTimestamp().getSeconds() * 1000
+                            currentYearList.get(i).getTimestamp().getSeconds() * 1000 + currentYearList.get(i).getTimestamp().getNanos() / 1000
                     );
                 }
             }
@@ -67,21 +67,21 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
 
                 city.ifPresent(c -> context.collectWithTimestamp(
                         MeasurementOwn.fromMeasurement(measurement, c),
-                        measurement.getTimestamp().getSeconds() * 1000
+                        measurement.getTimestamp().getSeconds() * 1000 + measurement.getTimestamp().getNanos() / 1000
                 ));
             }
 
             // emit watermark
-            city = Main.locationRetriever.findCityForLocation(
+            /*city = Main.locationRetriever.findCityForLocation(
                     new PointOwn(currentYearList.get(currentYearList.size() - 1))
             );
 
             context.collectWithTimestamp(
                     MeasurementOwn.fromMeasurement(currentYearList.get(currentYearList.size() - 1), city.orElse("no"), true),
-                    currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds() * 1000
-            );
+                    currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds() * 1000 + currentYearList.get(currentYearList.size() - 1).getTimestamp().getNanos() / 1000
+            );*/
 
-            context.emitWatermark(new Watermark(currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds() * 1000));
+            context.emitWatermark(new Watermark(currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds() * 1000 + currentYearList.get(currentYearList.size() - 1).getTimestamp().getNanos() / 1000));
 
             // System.out.println("Processed batch #" + cnt);
             ++cnt;

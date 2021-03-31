@@ -7,14 +7,12 @@ public class AQIValue24h {
     private final long timestamp;
     private final boolean watermark;
     private final String city;
-    private final boolean active;
 
-    public AQIValue24h(int aqi, long timestamp, boolean watermark, String city, boolean active) {
+    public AQIValue24h(int aqi, long timestamp, boolean watermark, String city) {
         this.aqi = aqi;
         this.timestamp = timestamp;
         this.watermark = watermark;
         this.city = city;
-        this.active = active;
     }
 
     public int getAQI() {
@@ -33,10 +31,6 @@ public class AQIValue24h {
         return city;
     }
 
-    public boolean isActive() {
-        return active;
-    }
-
     public boolean isGood() {
         return aqi <= 50;
     }
@@ -45,7 +39,7 @@ public class AQIValue24h {
     public String toString() {
         return "AQIValue24h{" +
                 "AQI=" + aqi +
-                ", timestamp=" + new Date(timestamp).toGMTString() +
+                ", timestamp=" + new Date(timestamp).toString() +
                 ", city='" + city + '\'' +
                 ", isWatermark='" + isWatermark() +
                 '}';

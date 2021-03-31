@@ -37,7 +37,7 @@ public class MeasurementOwn implements Serializable {
                 m.getP2(),
                 m.getLatitude(),
                 m.getLongitude(),
-                m.getTimestamp().getSeconds() * 1000,
+                m.getTimestamp().getSeconds() * 1000 + m.getTimestamp().getNanos() / 1000,
                 city,
                 false);
     }
@@ -48,7 +48,7 @@ public class MeasurementOwn implements Serializable {
                 m.getP2(),
                 m.getLatitude(),
                 m.getLongitude(),
-                m.getTimestamp().getSeconds() * 1000,
+                m.getTimestamp().getSeconds() * 1000 + m.getTimestamp().getNanos() / 1000,
                 city,
                 watermark);
     }

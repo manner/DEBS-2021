@@ -26,7 +26,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
 
         long currentStart = 1577833200000L;
-        long lastStart = currentStart - (365 * 24 * 60 * 60 * 1000);
+        long lastStart = currentStart - 31536000000L; // 365 days before
 
         ManagedChannel channel = ManagedChannelBuilder
                 .forAddress("challenge.msrg.in.tum.de", 5023)
@@ -66,7 +66,7 @@ public class Main {
                 .keyBy(MeasurementOwn::getCity)
                 .transform(
                         "AQIValue24hProcessOperator",
-                        TypeInformation.of(AQIValue24hProcessOperator.class),
+                        TypeInformation.of(AQIValue24h.class),
                         new AQIValue24hProcessOperator(currentStart)
                 );
 
@@ -74,7 +74,7 @@ public class Main {
                 .keyBy(MeasurementOwn::getCity)
                 .transform(
                         "AQIValue24hProcessOperator",
-                        TypeInformation.of(AQIValue24hProcessOperator.class),
+                        TypeInformation.of(AQIValue24h.class),
                         new AQIValue24hProcessOperator(lastStart)
                 );
 
