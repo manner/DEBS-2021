@@ -2,6 +2,7 @@ package de.hpi.debs;
 
 import de.tum.i13.bandency.Location;
 import de.tum.i13.bandency.Locations;
+import de.tum.i13.bandency.Measurement;
 import org.geotools.data.DataStore;
 import org.geotools.data.collection.SpatialIndexFeatureCollection;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
@@ -133,5 +134,9 @@ public class LocationRetriever {
 
     public Optional<String> findCityForLocation(PointOwn point) {
         return findNearestPolygon(new Coordinate(point.getLatitude(), point.getLongitude()));
+    }
+
+    public Optional<String> findCityForMeasurement(Measurement measurement) {
+        return findCityForLocation(new PointOwn(measurement));
     }
 }

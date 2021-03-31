@@ -8,6 +8,8 @@ import de.tum.i13.bandency.Batch;
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.Measurement;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,7 +31,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
     @Override
     public void run(SourceContext<MeasurementOwn> context) {
 
-        Optional<String> city;
+        Optional<String> optionalCity;
 
         while (running) {
 //            Batch batch = Main.challengeClient.nextBatch(benchmark);
@@ -45,47 +47,40 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
             List<Measurement> currentYearList = batch.getCurrentList();
             List<Measurement> lastYearList = batch.getLastyearList();
 
-            for (int i = 0; i < currentYearList.size() - 1; i++) {
+            HashMap<String, List<MeasurementOwn>> currentMap = new HashMap<>();
 
-                city = Main.locationRetriever.findCityForLocation(
-                        new PointOwn(currentYearList.get(i))
-                );
+            for (Measurement measurement : currentYearList) {
+                optionalCity = Main.locationRetriever.findCityForMeasurement(measurement);
+                optionalCity.ifPresent(city -> {
+                    MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, city);
+                    currentMap.computeIfAbsent(city, a -> new ArrayList<>());
+                    currentMap.get(city).add(m);
+                });
+            }
 
-                if (city.isPresent()) {
-                    context.collectWithTimestamp(
-                            MeasurementOwn.fromMeasurement(currentYearList.get(i), city.get()),
-                            currentYearList.get(i).getTimestamp().getSeconds() * 1000 + currentYearList.get(i).getTimestamp().getNanos() / 1000
-                    );
+            for (List<MeasurementOwn> measurementsForCity : currentMap.values()) {
+                measurementsForCity.sort((m1, m2) -> (int) (m1.getTimestamp() - m2.getTimestamp()));
+                for (int i = 0; i < measurementsForCity.size(); i++) {
+                    MeasurementOwn m = measurementsForCity.get(i);
+                    if (i == measurementsForCity.size() - 1) {
+                        m.setIsWatermark();
+                    }
+                    context.collectWithTimestamp(m, m.getTimestamp());
                 }
             }
 
             for (Measurement measurement : lastYearList) {
-
-                city = Main.locationRetriever.findCityForLocation(
-                        new PointOwn(measurement)
-                );
-
-                city.ifPresent(c -> context.collectWithTimestamp(
-                        MeasurementOwn.fromMeasurement(measurement, c),
-                        measurement.getTimestamp().getSeconds() * 1000 + measurement.getTimestamp().getNanos() / 1000
-                ));
+                optionalCity = Main.locationRetriever.findCityForMeasurement(measurement);
+                optionalCity.ifPresent(city -> {
+                    MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, city);
+                    context.collectWithTimestamp(m, m.getTimestamp());
+                });
             }
 
-            // emit watermark
-            /*city = Main.locationRetriever.findCityForLocation(
-                    new PointOwn(currentYearList.get(currentYearList.size() - 1))
-            );
+            // emit flink watermark
+            context.emitWatermark(new Watermark(currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds() * 1000));
 
-            context.collectWithTimestamp(
-                    MeasurementOwn.fromMeasurement(currentYearList.get(currentYearList.size() - 1), city.orElse("no"), true),
-                    currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds() * 1000 + currentYearList.get(currentYearList.size() - 1).getTimestamp().getNanos() / 1000
-            );*/
-
-            context.emitWatermark(new Watermark(currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds() * 1000 + currentYearList.get(currentYearList.size() - 1).getTimestamp().getNanos() / 1000));
-
-            // System.out.println("Processed batch #" + cnt);
             ++cnt;
-
             if (cnt >= batchNumbers) { //for testing you can
                 running = false;
             }
