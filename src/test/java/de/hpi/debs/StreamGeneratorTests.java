@@ -1,19 +1,27 @@
 package de.hpi.debs;
 
+import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
+
 import com.google.protobuf.Timestamp;
 import de.hpi.debs.serializer.LocationSerializer;
 import de.hpi.debs.testHarness.SourceFunctionMocker;
-import de.tum.i13.bandency.*;
+import de.tum.i13.bandency.Batch;
+import de.tum.i13.bandency.Benchmark;
+import de.tum.i13.bandency.BenchmarkConfiguration;
+import de.tum.i13.bandency.ChallengerGrpc;
+import de.tum.i13.bandency.Locations;
+import de.tum.i13.bandency.Measurement;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class StreamGeneratorTests {
 
@@ -220,17 +228,14 @@ public class StreamGeneratorTests {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            assertEquals("source throw an error while processing batches: " + e.toString(), "");
         }
 
         int i = 1;
 
-        // check if every event is in groud truth
+        // check if every event is in ground truth
         for (Object item : testContext.getOutput()) {
             if (item.getClass() == StreamRecord.class) {
-                if (!groundTruth.contains(item))
-                    assertEquals("Event should be in the list.", item);
-                //assertEquals(groundTruth.get(i), item);
+                assertTrue(groundTruth.contains(item), "missing event: " + item);
                 i++;
             }
         }
