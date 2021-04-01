@@ -33,12 +33,6 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
     }
 
     public void processBatch(SourceContext<MeasurementOwn> context, Batch batch) {
-        if (batch.getLast()) { // Stop when we get the last batch
-            // System.out.println("Received last batch, finished!");
-            running = false;
-            return;
-        }
-
         // process the batch of events we have
         List<Measurement> currentYearList = batch.getCurrentList();
         List<Measurement> lastYearList = batch.getLastyearList();
@@ -86,6 +80,12 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
 
         ++cnt;
         if (cnt >= batchNumbers) { //for testing you can
+            running = false;
+            return;
+        }
+
+        if (batch.getLast()) { // Stop when we get the last batch
+            // System.out.println("Received last batch, finished!");
             running = false;
             return;
         }
