@@ -2,16 +2,17 @@ package de.hpi.debs;
 
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
+import org.apache.flink.streaming.api.windowing.time.Time;
 
 import de.hpi.debs.serializer.BatchSerializer;
 import de.tum.i13.bandency.Batch;
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.Measurement;
 
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 public class StreamGenerator implements SourceFunction<MeasurementOwn> {
     private volatile boolean running = true;
@@ -19,6 +20,8 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
     private int batchNumbers;
     private Benchmark benchmark;
     private Optional<String> optionalCity;
+    private HashMap<String, Long> cities;
+
 
     public StreamGenerator(
             Benchmark benchmarkIn,
@@ -27,6 +30,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
 
         benchmark = benchmarkIn;
         batchNumbers = batchNumbersIn;
+        cities = new HashMap<>();
     }
 
     public void processBatch(SourceContext<MeasurementOwn> context, Batch batch) {
@@ -39,23 +43,34 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
         // process the batch of events we have
         List<Measurement> currentYearList = batch.getCurrentList();
         List<Measurement> lastYearList = batch.getLastyearList();
+        Measurement lastMeasurement = currentYearList.get(currentYearList.size() - 1);
 
-        Set<String> cities = new HashSet<>();
 
         for (Measurement measurement : currentYearList) {
             optionalCity = Main.locationRetriever.findCityForMeasurement(measurement);
             optionalCity.ifPresent(city -> {
                 MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, city);
-                cities.add(city);
+
+                Long lastTimestamp = cities.get(city);
+                if (lastTimestamp == null) {
+                    cities.putIfAbsent(city, m.getTimestamp());
+                } else if (m.getTimestamp() > lastTimestamp) {
+                    cities.put(city, m.getTimestamp());
+                }
                 context.collectWithTimestamp(m, m.getTimestamp());
             });
         }
 
         // send watermarks for each city in batch
-        for (String city : cities) {
-            long watermarkTimestamp = currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds() * 1000;
-            MeasurementOwn watermark = new MeasurementOwn(0, 0, 0, 0, watermarkTimestamp, city, true);
-            context.collectWithTimestamp(watermark, watermarkTimestamp);
+        long watermarkTimestamp = lastMeasurement.getTimestamp().getSeconds() * 1000 + lastMeasurement.getTimestamp().getNanos() / 1000;
+        for (Map.Entry<String, Long> city : cities.entrySet()) {
+            long lastTimestampOfCity = city.getValue();
+
+            // check if city is active
+            if (lastTimestampOfCity >= watermarkTimestamp - Time.minutes(10).toMilliseconds()) {
+                MeasurementOwn watermark = new MeasurementOwn(0, 0, 0, 0, watermarkTimestamp, city.getKey(), true);
+                context.collectWithTimestamp(watermark, watermarkTimestamp);
+            }
         }
 
         for (Measurement measurement : lastYearList) {
@@ -67,7 +82,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
         }
 
         // emit flink watermark
-        context.emitWatermark(new Watermark(currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds() * 1000));
+        context.emitWatermark(new Watermark(watermarkTimestamp));
 
         ++cnt;
         if (cnt >= batchNumbers) { //for testing you can
