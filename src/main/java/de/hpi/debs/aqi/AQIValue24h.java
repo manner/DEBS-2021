@@ -15,10 +15,6 @@ public class AQIValue24h {
         this.city = city;
     }
 
-    public int getAQI() {
-        return aqi;
-    }
-
     public long getTimestamp() {
         return timestamp;
     }
@@ -33,6 +29,21 @@ public class AQIValue24h {
 
     public boolean isGood() {
         return aqi <= 50;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        } else if (o != null && getClass() == o.getClass()) {
+            AQIValue24h that = (AQIValue24h) o;
+            return this.aqi == that.aqi
+                    && this.timestamp == that.timestamp
+                    && this.watermark == that.watermark
+                    && this.city == null ? that.city == null : this.city.equals(that.city);
+        } else {
+            return false;
+        }
     }
 
     @Override
