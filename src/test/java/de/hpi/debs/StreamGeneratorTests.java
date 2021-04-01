@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class StreamGeneratorTests {
 
@@ -226,6 +225,7 @@ public class StreamGeneratorTests {
 
         int i = 1;
 
+        // check if every event is in groud truth
         for (Object item : testContext.getOutput()) {
             if (item.getClass() == StreamRecord.class) {
                 if (!groundTruth.contains(item))
@@ -235,6 +235,6 @@ public class StreamGeneratorTests {
             }
         }
 
-        assertEquals(groundTruth.size(), i);
+        assertEquals(groundTruth.size(), i); // check if we have the same number of events emitted as ground truth
     }
 }
