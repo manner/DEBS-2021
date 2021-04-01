@@ -18,6 +18,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
     private int cnt = 0;
     private int batchNumbers;
     private Benchmark benchmark;
+    private Optional<String> optionalCity;
 
     public StreamGenerator(
             Benchmark benchmarkIn,
@@ -28,62 +29,67 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
         batchNumbers = batchNumbersIn;
     }
 
+    public void processBatch(SourceContext<MeasurementOwn> context, Batch batch) {
+        if (batch.getLast()) { // Stop when we get the last batch
+            // System.out.println("Received last batch, finished!");
+            running = false;
+            return;
+        }
+
+        // process the batch of events we have
+        List<Measurement> currentYearList = batch.getCurrentList();
+        List<Measurement> lastYearList = batch.getLastyearList();
+
+        HashMap<String, List<MeasurementOwn>> currentMap = new HashMap<>();
+
+        for (Measurement measurement : currentYearList) {
+            optionalCity = Main.locationRetriever.findCityForMeasurement(measurement);
+            optionalCity.ifPresent(city -> {
+                MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, city);
+                currentMap.computeIfAbsent(city, a -> new ArrayList<>());
+                currentMap.get(city).add(m);
+            });
+        }
+
+        for (List<MeasurementOwn> measurementsForCity : currentMap.values()) {
+            measurementsForCity.sort((m1, m2) -> (int) (m1.getTimestamp() - m2.getTimestamp()));
+            for (int i = 0; i < measurementsForCity.size(); i++) {
+                MeasurementOwn m = measurementsForCity.get(i);
+                if (i == measurementsForCity.size() - 1) {
+                    m.setIsWatermark();
+                }
+                context.collectWithTimestamp(m, m.getTimestamp());
+            }
+        }
+
+        for (Measurement measurement : lastYearList) {
+            optionalCity = Main.locationRetriever.findCityForMeasurement(measurement);
+            optionalCity.ifPresent(city -> {
+                MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, city);
+                context.collectWithTimestamp(m, m.getTimestamp());
+            });
+        }
+
+        // emit flink watermark
+        context.emitWatermark(new Watermark(currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds() * 1000));
+
+        ++cnt;
+        if (cnt >= batchNumbers) { //for testing you can
+            running = false;
+            return;
+        }
+
+        running = true;
+    }
+
     @Override
     public void run(SourceContext<MeasurementOwn> context) {
-
-        Optional<String> optionalCity;
 
         while (running) {
 //            Batch batch = Main.challengeClient.nextBatch(benchmark);
             Batch batch = BatchSerializer.getBatch(Main.challengeClient, benchmark, cnt);
 
-            if (batch.getLast()) { // Stop when we get the last batch
-                // System.out.println("Received last batch, finished!");
-                running = false;
-                break;
-            }
-
-            // process the batch of events we have
-            List<Measurement> currentYearList = batch.getCurrentList();
-            List<Measurement> lastYearList = batch.getLastyearList();
-
-            HashMap<String, List<MeasurementOwn>> currentMap = new HashMap<>();
-
-            for (Measurement measurement : currentYearList) {
-                optionalCity = Main.locationRetriever.findCityForMeasurement(measurement);
-                optionalCity.ifPresent(city -> {
-                    MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, city);
-                    currentMap.computeIfAbsent(city, a -> new ArrayList<>());
-                    currentMap.get(city).add(m);
-                });
-            }
-
-            for (List<MeasurementOwn> measurementsForCity : currentMap.values()) {
-                measurementsForCity.sort((m1, m2) -> (int) (m1.getTimestamp() - m2.getTimestamp()));
-                for (int i = 0; i < measurementsForCity.size(); i++) {
-                    MeasurementOwn m = measurementsForCity.get(i);
-                    if (i == measurementsForCity.size() - 1) {
-                        m.setIsWatermark();
-                    }
-                    context.collectWithTimestamp(m, m.getTimestamp());
-                }
-            }
-
-            for (Measurement measurement : lastYearList) {
-                optionalCity = Main.locationRetriever.findCityForMeasurement(measurement);
-                optionalCity.ifPresent(city -> {
-                    MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, city);
-                    context.collectWithTimestamp(m, m.getTimestamp());
-                });
-            }
-
-            // emit flink watermark
-            context.emitWatermark(new Watermark(currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds() * 1000));
-
-            ++cnt;
-            if (cnt >= batchNumbers) { //for testing you can
-                running = false;
-            }
+            processBatch(context, batch);
         }
     }
 
