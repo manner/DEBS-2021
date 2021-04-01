@@ -16,9 +16,8 @@ import java.util.Optional;
 public class StreamGenerator implements SourceFunction<MeasurementOwn> {
     private volatile boolean running = true;
     private int cnt = 0;
-    private int batchNumbers;
-    private Benchmark benchmark;
-    private Optional<String> optionalCity;
+    private final int batchNumbers;
+    private final Benchmark benchmark;
 
     public StreamGenerator(
             Benchmark benchmarkIn,
@@ -41,6 +40,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
         List<Measurement> lastYearList = batch.getLastyearList();
 
         HashMap<String, List<MeasurementOwn>> currentMap = new HashMap<>();
+        Optional<String> optionalCity;
 
         for (Measurement measurement : currentYearList) {
             optionalCity = Main.locationRetriever.findCityForMeasurement(measurement);
