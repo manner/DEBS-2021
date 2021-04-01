@@ -8,10 +8,10 @@ import de.tum.i13.bandency.Batch;
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.Measurement;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public class StreamGenerator implements SourceFunction<MeasurementOwn> {
     private volatile boolean running = true;
@@ -40,26 +40,22 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
         List<Measurement> currentYearList = batch.getCurrentList();
         List<Measurement> lastYearList = batch.getLastyearList();
 
-        HashMap<String, List<MeasurementOwn>> currentMap = new HashMap<>();
+        Set<String> cities = new HashSet<>();
 
         for (Measurement measurement : currentYearList) {
             optionalCity = Main.locationRetriever.findCityForMeasurement(measurement);
             optionalCity.ifPresent(city -> {
                 MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, city);
-                currentMap.computeIfAbsent(city, a -> new ArrayList<>());
-                currentMap.get(city).add(m);
+                cities.add(city);
+                context.collectWithTimestamp(m, m.getTimestamp());
             });
         }
 
-        for (List<MeasurementOwn> measurementsForCity : currentMap.values()) {
-            measurementsForCity.sort((m1, m2) -> (int) (m1.getTimestamp() - m2.getTimestamp()));
-            for (int i = 0; i < measurementsForCity.size(); i++) {
-                MeasurementOwn m = measurementsForCity.get(i);
-                if (i == measurementsForCity.size() - 1) {
-                    m.setIsWatermark();
-                }
-                context.collectWithTimestamp(m, m.getTimestamp());
-            }
+        // send watermarks for each city in batch
+        for (String city : cities) {
+            long watermarkTimestamp = currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds() * 1000;
+            MeasurementOwn watermark = new MeasurementOwn(0, 0, 0, 0, watermarkTimestamp, city, true);
+            context.collectWithTimestamp(watermark, watermarkTimestamp);
         }
 
         for (Measurement measurement : lastYearList) {
