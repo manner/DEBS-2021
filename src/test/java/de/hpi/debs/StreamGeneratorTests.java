@@ -232,7 +232,7 @@ public class StreamGeneratorTests {
             e.printStackTrace();
         }
 
-        int i = 1;
+        int i = 0;
 
         // check if every event is in ground truth
         for (Object item : testContext.getOutput()) {
@@ -242,6 +242,6 @@ public class StreamGeneratorTests {
             }
         }
 
-        assertEquals(groundTruth.size(), i); // check if we have the same number of events emitted as ground truth
+        assertEquals(i, groundTruth.size()); // check if we have the same number of events emitted as ground truth
     }
 }
