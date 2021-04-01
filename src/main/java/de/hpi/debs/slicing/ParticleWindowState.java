@@ -1,8 +1,5 @@
 package de.hpi.debs.slicing;
 
-import de.hpi.debs.Event;
-import org.apache.flink.api.java.tuple.Tuple4;
-
 import java.util.ArrayList;
 
 public class ParticleWindowState {
@@ -12,6 +9,8 @@ public class ParticleWindowState {
     protected int slicesNr;
     protected int checkpoint;
     protected final String city;
+    protected double eventsSum;
+    protected int executionMode; // 0 - pre-aggregated window slicing, 1 - slice pre-aggregation only & no window pre-aggregation
 
     public ParticleWindowState(String city, long start, long end) {
         this.slicesP1 = new ArrayList<>();
@@ -22,6 +21,8 @@ public class ParticleWindowState {
         this.slicesNr = 1;
         this.checkpoint = 0;
         this.city = city;
+        this.eventsSum = 0.0;
+        this.executionMode = 0;
     }
 
     public String getCity() {
@@ -72,6 +73,8 @@ public class ParticleWindowState {
     public void addMeasure(int index, float p1, float p2, long ts) {
         slicesP1.get(index).add(p1, ts);
         slicesP2.get(index).add(p2, ts);
+
+        ++eventsSum;
     }
 
     public void addPreAggregate(int index, double sumP1, double sumP2, int count) {
@@ -79,10 +82,14 @@ public class ParticleWindowState {
         slicesP2.get(index).addToWindow(sumP2, count);
 
         ++checkpoint;
+
+        eventsSum += count;
     }
 
     public void removeSlices(long ts) {
         while (!slicesP1.isEmpty() && slicesP1.get(0).getEnd() <= ts) {
+            eventsSum -= slicesP1.get(0).getSum();
+
             slicesP1.remove(0);
             slicesP2.remove(0);
 
@@ -92,6 +99,8 @@ public class ParticleWindowState {
 
     public void removeEmptyTail() {
         while (!slicesP1.isEmpty() && slicesP1.get(0).isEmpty()) {
+            eventsSum -= slicesP1.get(0).getSum();
+
             slicesP1.remove(0);
             slicesP2.remove(0);
 
@@ -107,6 +116,8 @@ public class ParticleWindowState {
                 ", lastWatermark=" + lastWatermark +
                 ", slicesNr=" + slicesNr +
                 ", city=" + city +
+                ", eventsSum=" + eventsSum +
+                ", executionMode=" + executionMode +
                 '}';
     }
 }
