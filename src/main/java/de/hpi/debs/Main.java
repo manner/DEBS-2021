@@ -62,6 +62,8 @@ public class Main {
         DataStream<MeasurementOwn> lastYearCities = cities.filter(MeasurementOwn::isLastYear);
         DataStream<MeasurementOwn> currentYearCities = cities.filter(MeasurementOwn::isCurrentYear);
 
+        lastYearCities.print();
+
         DataStream<AQIValue24h> aqiStreamCurrentYear = currentYearCities
                 .keyBy(MeasurementOwn::getCity)
                 .transform(

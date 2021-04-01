@@ -1,5 +1,6 @@
 package de.hpi.debs;
 
+import de.hpi.debs.aqi.AQIValue24h;
 import de.tum.i13.bandency.Measurement;
 
 import java.io.Serializable;
@@ -29,6 +30,17 @@ public class MeasurementOwn implements Serializable {
         this.timestamp = timestamp;
         this.city = city;
         this.isWatermark = watermark;
+    }
+
+    public MeasurementOwn(MeasurementOwn m) {
+        this(
+                m.getP1(),
+                m.getP2(),
+                m.getLatitude(),
+                m.getLongitude(),
+                m.getTimestamp(),
+                m.getCity(),
+                m.isWatermark());
     }
 
     public static MeasurementOwn fromMeasurement(Measurement m, String city) {
@@ -103,6 +115,23 @@ public class MeasurementOwn implements Serializable {
 
     public void setIsWatermark() {
         isWatermark = true;
+    }
+
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        } else if (o != null && getClass() == o.getClass()) {
+            MeasurementOwn that = (MeasurementOwn) o;
+            return this.p1 == that.p1
+                    && this.p2 == that.p2
+                    && this.latitude == that.latitude
+                    && this.longitude == that.longitude
+                    && this.timestamp == that.timestamp
+                    && this.isWatermark == that.isWatermark
+                    && this.city == null ? that.city == null : this.city.equals(that.city);
+        } else {
+            return false;
+        }
     }
 
     @Override
