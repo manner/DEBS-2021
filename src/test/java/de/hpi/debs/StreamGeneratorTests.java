@@ -185,7 +185,10 @@ public class StreamGeneratorTests {
 
         try {
             for (Batch batch : batches) {
-                for (Measurement m : batch.getCurrentList()) { // events should be emitted in same order as they are in batch
+                List<Measurement> allMeasurements = new ArrayList<>();
+                allMeasurements.addAll(batch.getCurrentList());
+                allMeasurements.addAll(batch.getLastyearList());
+                for (Measurement m : allMeasurements) { // events should be emitted in same order as they are in batch
                     if (m.getLatitude() != 0.0F) {
                         timestamp = (long) (m.getTimestamp().getSeconds() * 1000.0 + m.getTimestamp().getNanos() / 1000.0);
                         if (m.getLatitude() == 51.42F) { // Essen
