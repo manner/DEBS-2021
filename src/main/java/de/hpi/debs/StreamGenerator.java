@@ -2,15 +2,16 @@ package de.hpi.debs;
 
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
+import org.apache.flink.streaming.api.windowing.time.Time;
 
 import de.hpi.debs.serializer.BatchSerializer;
 import de.tum.i13.bandency.Batch;
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.Measurement;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class StreamGenerator implements SourceFunction<MeasurementOwn> {
@@ -18,6 +19,8 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
     private int cnt = 0;
     private final int batchNumbers;
     private final Benchmark benchmark;
+    private final HashMap<String, Long> cities;
+
 
     public StreamGenerator(
             Benchmark benchmarkIn,
@@ -26,6 +29,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
 
         benchmark = benchmarkIn;
         batchNumbers = batchNumbersIn;
+        cities = new HashMap<>();
     }
 
     public void processBatch(SourceContext<MeasurementOwn> context, Batch batch) {
@@ -38,27 +42,34 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
         // process the batch of events we have
         List<Measurement> currentYearList = batch.getCurrentList();
         List<Measurement> lastYearList = batch.getLastyearList();
+        Measurement lastMeasurement = currentYearList.get(currentYearList.size() - 1);
 
-        HashMap<String, List<MeasurementOwn>> currentMap = new HashMap<>();
         Optional<String> optionalCity;
 
         for (Measurement measurement : currentYearList) {
             optionalCity = Main.locationRetriever.findCityForMeasurement(measurement);
             optionalCity.ifPresent(city -> {
                 MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, city);
-                currentMap.computeIfAbsent(city, a -> new ArrayList<>());
-                currentMap.get(city).add(m);
+
+                Long lastTimestamp = cities.get(city);
+                if (lastTimestamp == null) {
+                    cities.putIfAbsent(city, m.getTimestamp());
+                } else if (m.getTimestamp() > lastTimestamp) {
+                    cities.put(city, m.getTimestamp());
+                }
+                context.collectWithTimestamp(m, m.getTimestamp());
             });
         }
 
-        for (List<MeasurementOwn> measurementsForCity : currentMap.values()) {
-            measurementsForCity.sort((m1, m2) -> (int) (m1.getTimestamp() - m2.getTimestamp()));
-            for (int i = 0; i < measurementsForCity.size(); i++) {
-                MeasurementOwn m = measurementsForCity.get(i);
-                if (i == measurementsForCity.size() - 1) {
-                    m.setIsWatermark();
-                }
-                context.collectWithTimestamp(m, m.getTimestamp());
+        // send watermarks for each city in batch
+        long watermarkTimestamp = lastMeasurement.getTimestamp().getSeconds() * 1000 + lastMeasurement.getTimestamp().getNanos() / 1000;
+        for (Map.Entry<String, Long> city : cities.entrySet()) {
+            long lastTimestampOfCity = city.getValue();
+
+            // check if city is active
+            if (lastTimestampOfCity >= watermarkTimestamp - Time.minutes(10).toMilliseconds()) {
+                MeasurementOwn watermark = new MeasurementOwn(0, 0, 0, 0, watermarkTimestamp, city.getKey(), true);
+                context.collectWithTimestamp(watermark, watermarkTimestamp);
             }
         }
 
@@ -71,7 +82,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
         }
 
         // emit flink watermark
-        context.emitWatermark(new Watermark(currentYearList.get(currentYearList.size() - 1).getTimestamp().getSeconds() * 1000));
+        context.emitWatermark(new Watermark(watermarkTimestamp));
 
         ++cnt;
         if (cnt >= batchNumbers) { //for testing you can
