@@ -1,6 +1,5 @@
 package de.hpi.debs;
 
-import de.hpi.debs.aqi.AQIValue24h;
 import de.tum.i13.bandency.Measurement;
 
 import java.io.Serializable;
@@ -63,6 +62,18 @@ public class MeasurementOwn implements Serializable {
                 m.getTimestamp().getSeconds() * 1000 + m.getTimestamp().getNanos() / 1000,
                 city,
                 watermark);
+    }
+
+    public static MeasurementOwn createWatermark(long timestamp, String city) {
+        return new MeasurementOwn(
+                0,
+                0,
+                0,
+                0,
+                timestamp,
+                city,
+                true
+        );
     }
 
     public boolean isLastYear() {
