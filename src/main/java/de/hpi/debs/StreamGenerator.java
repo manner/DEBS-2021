@@ -55,6 +55,14 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
             });
         }
 
+        for (Measurement measurement : lastYearList) {
+            optionalCity = Main.locationRetriever.findCityForMeasurement(measurement);
+            optionalCity.ifPresent(city -> {
+                MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, city);
+                context.collectWithTimestamp(m, m.getTimestamp());
+            });
+        }
+
         // send watermarks for each city in batch
         long watermarkTimestamp = lastMeasurement.getTimestamp().getSeconds() * 1000 + lastMeasurement.getTimestamp().getNanos() / 1000;
         for (Map.Entry<String, Long> city : cities.entrySet()) {
@@ -65,14 +73,6 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
                 MeasurementOwn watermark = new MeasurementOwn(0, 0, 0, 0, watermarkTimestamp, city.getKey(), true);
                 context.collectWithTimestamp(watermark, watermarkTimestamp);
             }
-        }
-
-        for (Measurement measurement : lastYearList) {
-            optionalCity = Main.locationRetriever.findCityForMeasurement(measurement);
-            optionalCity.ifPresent(city -> {
-                MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, city);
-                context.collectWithTimestamp(m, m.getTimestamp());
-            });
         }
 
         // emit flink watermark
