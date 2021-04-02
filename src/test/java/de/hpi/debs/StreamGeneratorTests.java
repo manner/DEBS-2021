@@ -94,63 +94,65 @@ public class StreamGeneratorTests {
 
     ArrayList<Batch> batches = new ArrayList<>() {{
         add(generator.clear()
-                .addCurrent(1.0F, 88.0F, 52.532F, 13.328F, 331536030L, 100) // Berlin Moabit
-                .addCurrent(15.0F, 2.0F, 51.42F, 6.971F, 331536040L, 1000) // Essen
-                .addCurrent(100.0F, 2.0F, 0.0F, 0.0F, 331536031L, 1020) // Hopefully will be filtered out
+                .addCurrent(1.0F, 88.0F, 52.532F, 13.328F, 31536030L, 100) // Berlin Moabit
+                .addCurrent(15.0F, 2.0F, 51.42F, 6.971F, 31536040L, 1000) // Essen
+                .addCurrent(100.0F, 2.0F, 0.0F, 0.0F, 31536031L, 1020) // Hopefully will be filtered out
                 .addLastYear(1.0F, 2.1F, 52.532F, 13.328F, 10L, 100) // Berlin Moabit
                 .addLastYear(1.1F, 2.0F, 51.42F, 6.971F, 13L, 100) // Essen
                 .addLastYear(123.0F, 2.0F, 52.532F, 13.328F, 100L, 1050) // Berlin Moabit
                 .addLastYear(1.5F, 2.0F, 52.532F, 13.328F, 340L, 100) // Berlin Moabit
-                .addCurrent(1.0F, 2.5F, 52.532F, 13.328F, 331536030L, 100) // Berlin Moabit
-                .addCurrent(1.0F, 200.0F, 52.532F, 13.328F, 331536030L, 100) // Berlin Moabit
+                .addCurrent(1.0F, 2.5F, 52.532F, 13.328F, 31536030L, 100) // Berlin Moabit
+                .addCurrent(1.0F, 200.0F, 52.532F, 13.328F, 31536030L, 100) // Berlin Moabit
                 .addLastYear(1.0F, 211.0F, 51.42F, 6.971F, 60L, 100) // Essen
                 .addLastYear(1.0F, 2.2F, 51.42F, 6.971F, 40L, 100) // Essen
                 .addLastYear(10.0F, 2.0F, 51.42F, 6.971F, 80L, 1090) // Essen
-                .addCurrent(10.0F, 2.0F, 51.42F, 6.971F, 331536040L, 1000) // Essen
-                .addCurrent(1.0F, 20.0F, 52.532F, 13.328F, 331536030L, 1400) // Berlin Moabit
+                .addCurrent(10.0F, 2.0F, 51.42F, 6.971F, 31536040L, 1000) // Essen
+                .addCurrent(1.0F, 20.0F, 52.532F, 13.328F, 31536030L, 1400) // Berlin Moabit
                 .addLastYear(14.0F, 221.0F, 52.532F, 13.328F, 130L, 100) // Berlin Moabit
                 .addLastYear(3.0F, 2.0F, 51.42F, 6.971F, 90L, 1000) // Essen
-                .addCurrent(1.0F, 3.0F, 51.42F, 6.971F, 331536340L, 13000) // Essen
+                .addCurrent(1.0F, 3.0F, 51.42F, 6.971F, 31536340L, 13000) // Essen
                 .build(false)
         );
         add(generator.clear()
-                .addCurrent(4.0F, 2.0F, 52.532F, 13.328F, 331536030L, 100) // Berlin Moabit
-                .addCurrent(1.0F, 2.0F, 51.42F, 6.971F, 331536040L, 1000) // Essen
-                .addCurrent(100.0F, 2.0F, 0.0F, 0.0F, 331536431L, 1020) // Hopefully will be filtered out
+                .addCurrent(4.0F, 2.0F, 52.532F, 13.328F, 31536030L, 100) // Berlin Moabit
+                .addCurrent(1.0F, 2.0F, 51.42F, 6.971F, 31536040L, 1000) // Essen
+                .addCurrent(100.0F, 2.0F, 0.0F, 0.0F, 31536431L, 1020) // Hopefully will be filtered out
                 .addLastYear(1.0F, 2.0F, 52.532F, 13.328F, 100L, 100) // Berlin Moabit
                 .addLastYear(1.0F, 2.0F, 51.42F, 6.971F, 13L, 100) // Essen
+                .addCurrent(1.0F, 20.0F, 52.532F, 13.328F, 31536030L, 1400) // Berlin Moabit
                 .addLastYear(123.0F, 2.0F, 52.532F, 13.328F, 100L, 1050) // Berlin Moabit
                 .addLastYear(1.0F, 2.0F, 52.532F, 13.328F, 340L, 100) // Berlin Moabit
-                .addCurrent(1.0F, 2.0F, 52.532F, 13.328F, 331537035L, 100) // Berlin Moabit
-                .addCurrent(1.0F, 200.0F, 52.532F, 13.328F, 331537030L, 100) // Berlin Moabit
+                .addCurrent(1.0F, 2.0F, 52.532F, 13.328F, 31537035L, 100) // Berlin Moabit
+                .addCurrent(1.0F, 200.0F, 52.532F, 13.328F, 31537030L, 100) // Berlin Moabit
                 .addLastYear(1.0F, 24.0F, 51.42F, 6.971F, 7060L, 100) // Essen
                 .addLastYear(1.8F, 2.0F, 51.42F, 6.971F, 7040L, 100) // Essen
                 .addLastYear(10.0F, 2.0F, 51.42F, 6.971F, 7080L, 1090) // Essen
-                .addCurrent(10.0F, 2.0F, 51.42F, 6.971F, 331537140L, 1000) // Essen
-                .addCurrent(1.0F, 20.0F, 52.532F, 13.328F, 331537030L, 1400) // Berlin Moabit
+                .addCurrent(10.0F, 2.0F, 51.42F, 6.971F, 31537140L, 1000) // Essen
+                .addCurrent(1.0F, 20.0F, 52.532F, 13.328F, 31537030L, 1400) // Berlin Moabit
                 .addLastYear(14.0F, 221.0F, 52.532F, 13.328F, 7430L, 100) // Berlin Moabit
                 .addLastYear(17.0F, 2.0F, 51.42F, 6.971F, 7090L, 1000) // Essen
-                .addCurrent(1.0F, 2.0F, 51.42F, 6.971F, 331537340L, 13000) // Essen
+                .addCurrent(1.0F, 2.0F, 51.42F, 6.971F, 31537340L, 13000) // Essen
                 .build(false)
         );
         add(generator.clear()
-                .addCurrent(1.0F, 2.0F, 52.532F, 13.328F, 331539030L, 100) // Berlin Moabit
-                .addCurrent(1.0F, 2.0F, 51.42F, 6.971F, 331539040L, 1000) // Essen
-                .addCurrent(100.0F, 2.0F, 0.0F, 0.0F, 331539031L, 1020) // Hopefully will be filtered out
+                .addCurrent(1.0F, 2.0F, 52.532F, 13.328F, 31539030L, 100) // Berlin Moabit
+                .addCurrent(1.0F, 2.0F, 51.42F, 6.971F, 31539040L, 1000) // Essen
+                .addCurrent(100.0F, 2.0F, 0.0F, 0.0F, 31539031L, 1020) // Hopefully will be filtered out
                 .addLastYear(1.0F, 2.0F, 52.532F, 13.328F, 9010L, 100) // Berlin Moabit
                 .addLastYear(1.0F, 2.0F, 51.42F, 6.971F, 9013L, 100) // Essen
+                .addLastYear(1.0F, 20.0F, 52.532F, 13.328F, 30L, 1400) // Berlin Moabit
                 .addLastYear(123.0F, 2.0F, 52.532F, 13.328F, 9100L, 1050) // Berlin Moabit
                 .addLastYear(1.0F, 24.0F, 52.532F, 13.328F, 9340L, 100) // Berlin Moabit
-                .addCurrent(1.0F, 2.0F, 52.532F, 13.328F, 331539230L, 100) // Berlin Moabit
-                .addCurrent(1.0F, 200.0F, 52.532F, 13.328F, 331536030L, 100) // Berlin Moabit
+                .addCurrent(1.0F, 2.0F, 52.532F, 13.328F, 31539230L, 100) // Berlin Moabit
+                .addCurrent(1.0F, 200.0F, 52.532F, 13.328F, 31536030L, 100) // Berlin Moabit
                 .addLastYear(14.0F, 211.0F, 51.42F, 6.971F, 9060L, 100) // Essen
                 .addLastYear(1.0F, 2.0F, 51.42F, 6.971F, 40L, 100) // Essen
                 .addLastYear(10.0F, 2.0F, 51.42F, 6.971F, 9094L, 1090) // Essen
-                .addCurrent(10.0F, 2.0F, 51.42F, 6.971F, 331539070L, 1000) // Essen
-                .addCurrent(1.0F, 260.0F, 52.532F, 13.328F, 331536030L, 1400) // Berlin Moabit
+                .addCurrent(10.0F, 2.0F, 51.42F, 6.971F, 31539070L, 1000) // Essen
+                .addCurrent(1.0F, 260.0F, 52.532F, 13.328F, 31536030L, 1400) // Berlin Moabit
                 .addLastYear(14.0F, 221.0F, 52.532F, 13.328F, 90180L, 100) // Berlin Moabit
                 .addLastYear(1.0F, 2.0F, 51.42F, 6.971F, 9090L, 1000) // Essen
-                .addCurrent(1.0F, 2.0F, 51.42F, 6.971F, 331539340L, 13000) // Essen
+                .addCurrent(1.0F, 2.0F, 51.42F, 6.971F, 31539340L, 13000) // Essen
                 .build(true)
         );
     }};
@@ -182,15 +184,24 @@ public class StreamGeneratorTests {
         long timestamp;
         MeasurementOwn berlin = null;
         MeasurementOwn essen = null;
+        Measurement lastMeasurement;
+        long watermarkTimestamp = -1L;
+        long currentWatermark;
 
         try {
             for (Batch batch : batches) {
                 List<Measurement> allMeasurements = new ArrayList<>();
                 allMeasurements.addAll(batch.getCurrentList());
                 allMeasurements.addAll(batch.getLastyearList());
+                lastMeasurement = batch.getCurrentList().get(batch.getCurrentList().size() - 1);
+                currentWatermark = lastMeasurement.getTimestamp().getSeconds() * 1000 + lastMeasurement.getTimestamp().getNanos() / 1000;
                 for (Measurement m : allMeasurements) { // events should be emitted in same order as they are in batch
                     if (m.getLatitude() != 0.0F) {
                         timestamp = (long) (m.getTimestamp().getSeconds() * 1000.0 + m.getTimestamp().getNanos() / 1000.0);
+                        if (timestamp < 31536000000L && timestamp < watermarkTimestamp - 31536000000L)
+                            continue;
+                        if (timestamp >= 31536000000L && timestamp < watermarkTimestamp)
+                            continue;
                         if (m.getLatitude() == 51.42F) { // Essen
                             essen = new MeasurementOwn(
                                     m.getP1(),
@@ -216,8 +227,7 @@ public class StreamGeneratorTests {
                         }
                     }
                 }
-                Measurement lastMeasurement = batch.getCurrentList().get(batch.getCurrentList().size() - 1);
-                long watermarkTimestamp = lastMeasurement.getTimestamp().getSeconds() * 1000 + lastMeasurement.getTimestamp().getNanos() / 1000;
+                watermarkTimestamp = currentWatermark;
                 if (berlin != null) {
                     berlin = MeasurementOwn.createWatermark(watermarkTimestamp, "Berlin Moabit");
                     groundTruth.add(new StreamRecord<>(berlin, watermarkTimestamp));
