@@ -4,20 +4,30 @@ import java.util.Date;
 
 public class AQIValue5d {
     private final double aqi;
-    private final double currentAqi;
+    private final int curAqiP1;
+    private final int curAqiP2;
     private final long timestamp;
     private final boolean watermark;
     private final String city;
 
-    public AQIValue5d(double aqi, double currentAqi, long timestamp, boolean watermark, String city) {
+    public AQIValue5d(double aqi, int aqiP1, int aqiP2, long timestamp, boolean watermark, String city) {
         this.aqi = aqi;
-        this.currentAqi = currentAqi;
+        this.curAqiP1 = aqiP1;
+        this.curAqiP2 = aqiP2;
         this.timestamp = timestamp;
         this.watermark = watermark;
         this.city = city;
     }
 
     public double getAQI() {
+        return aqi;
+    }
+
+    public double getCurAqiP1() {
+        return aqi;
+    }
+
+    public double getCurAqiP2() {
         return aqi;
     }
 
@@ -37,7 +47,7 @@ public class AQIValue5d {
     public String toString() {
         return "AQIValue5d{" +
                 "AQI=" + aqi +
-                ", timestamp=" + new Date(timestamp).toGMTString() +
+                ", timestamp=" + new Date(timestamp).toString() +
                 ", city='" + city + '\'' +
                 ", isWatermark='" + isWatermark() +
                 '}';

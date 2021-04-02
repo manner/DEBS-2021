@@ -36,7 +36,7 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
         this.vDeltaIdx = (int)(size / step) - 1;
     }
 
-    public AQIValue5dProcessOperator(long start, long size, long step) {
+    /*public AQIValue5dProcessOperator(long start, long size, long step) {
         super(
                 new KeyedProcessFunction<>() {
                     @Override
@@ -51,7 +51,7 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
         this.step = step;
         this.doubleStep = 2 * this.step;
         this.vDeltaIdx = (int)(this.size / this.step) - 1;
-    }
+    }*/
 
     @Override
     public void open() {
@@ -115,11 +115,13 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
 
                 if (active && lw < curWindowEnd) {
                     double avgAqi = window.getAqiSlice(i).getWindowAvg();
-                    double curAqi = window.getAqiSlice(i).getSum();
+                    int curAqiP1 = window.getAqiSlice(i).getAqiP1s().get(0);
+                    int curAqiP2 = window.getAqiSlice(i).getAqiP2s().get(0);
 
                     output.collect(new StreamRecord<>(new AQIValue5d(
                             avgAqi,
-                            curAqi,
+                            curAqiP1,
+                            curAqiP2,
                             curWindowEnd,
                             false,
                             (String) getCurrentKey()),
@@ -186,11 +188,13 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
 
             if (active) { // check if in last v24hInSec where tuples emitted
                 double avgAqi = deltaWindowSum / deltaWindowCount;
-                double curAqi = window.getAqiSlice(i).getSum();
+                int curAqiP1 = window.getAqiSlice(i).getAqiP1s().get(window.getAqiSlice(i).getAqiP1s().size() - 1);
+                int curAqiP2 = window.getAqiSlice(i).getAqiP2s().get(window.getAqiSlice(i).getAqiP2s().size() - 1);
 
                 output.collect(new StreamRecord<>(new AQIValue5d(
                         avgAqi,
-                        curAqi,
+                        curAqiP1,
+                        curAqiP2,
                         wm,
                         true,
                         (String) getCurrentKey()),
@@ -240,6 +244,12 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
         }
 
         // update slice by new event
-        state.value().addMeasure(i, value.getValue().getAQI(), value.getTimestamp());
+        state.value().addMeasure(
+                i,
+                value.getValue().getAqi(),
+                value.getValue().getAqiP1(),
+                value.getValue().getAqiP2(),
+                value.getTimestamp()
+        );
     }
 }

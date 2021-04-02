@@ -4,19 +4,31 @@ import java.util.Date;
 
 public class AQIValue24h {
     private final int aqi;
+    private final int aqiP1;
+    private final int aqiP2;
     private final long timestamp;
     private final boolean watermark;
     private final String city;
 
-    public AQIValue24h(int aqi, long timestamp, boolean watermark, String city) {
+    public AQIValue24h(int aqi, int aqiP1, int aqiP2, long timestamp, boolean watermark, String city) {
         this.aqi = aqi;
+        this.aqiP1 = aqiP1;
+        this.aqiP2 = aqiP2;
         this.timestamp = timestamp;
         this.watermark = watermark;
         this.city = city;
     }
 
-    public double getAQI() {
+    public int getAqi() {
         return aqi;
+    }
+
+    public int getAqiP1() {
+        return aqiP1;
+    }
+
+    public int getAqiP2() {
+        return aqiP2;
     }
 
     public long getTimestamp() {

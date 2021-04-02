@@ -70,25 +70,25 @@ public class AQIValue24hProcessOperatorTests {
 
     // !attention! only one watermark for last key is emitted for all partitions, in this case we have only one partition
     protected ArrayList<StreamRecord<AQIValue24h>> groundTruth = new ArrayList<>() {{
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), 300000, true, "Berlin"), 300000));
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), 300000, true, "Poland"), 300000));
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), 600000, true, "Poland"), 600000));
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), 600000, true, "Berlin"), 600000));
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), 900000, false, "Berlin"), 900000));
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), 950000, true, "Berlin"), 950000));
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), 1800000, false, "Poland"), 1800000));
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), 1900000, true, "Poland"), 1900000));
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), 1200000, false, "Berlin"), 1200000));
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), 1500000, false, "Berlin"), 1500000));
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), 1800000, false, "Berlin"), 1800000));
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), 1900000, true, "Berlin"), 1900000));
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), 2100000, false, "Poland"), 2100000));
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), 2200000, true, "Poland"), 2200000));
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 100000000), 2100000, false, "Berlin"), 2100000));
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 100000000), 2200000, true, "Berlin"), 2200000));
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 100000000), 2400000, false, "Berlin"), 2400000));
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 100000000), 2700000, false, "Berlin"), 2700000));
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 100000000), 2900000, true, "Berlin"), 2900000));
+        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), AQICalculator.getAQI10(1), AQICalculator.getAQI25(2), 300000, true, "Berlin"), 300000));
+        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), AQICalculator.getAQI10(1), AQICalculator.getAQI25(2), 300000, true, "Poland"), 300000));
+        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), AQICalculator.getAQI10(1), AQICalculator.getAQI25(2), 600000, true, "Poland"), 600000));
+        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), AQICalculator.getAQI10(1), AQICalculator.getAQI25(2), 600000, true, "Berlin"), 600000));
+        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), AQICalculator.getAQI10(1), AQICalculator.getAQI25(2), 900000, false, "Berlin"), 900000));
+        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), AQICalculator.getAQI10(1), AQICalculator.getAQI25(2), 950000, true, "Berlin"), 950000));
+        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), AQICalculator.getAQI10(1), AQICalculator.getAQI25(2), 1800000, false, "Poland"), 1800000));
+        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), AQICalculator.getAQI10(1), AQICalculator.getAQI25(2), 1900000, true, "Poland"), 1900000));
+        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), AQICalculator.getAQI10(1), AQICalculator.getAQI25(2), 1200000, false, "Berlin"), 1200000));
+        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), AQICalculator.getAQI10(1), AQICalculator.getAQI25(2), 1500000, false, "Berlin"), 1500000));
+        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), AQICalculator.getAQI10(1), AQICalculator.getAQI25(2), 1800000, false, "Berlin"), 1800000));
+        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), AQICalculator.getAQI10(1), AQICalculator.getAQI25(2), 1900000, true, "Berlin"), 1900000));
+        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), AQICalculator.getAQI10(1), AQICalculator.getAQI25(2), 2100000, false, "Poland"), 2100000));
+        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 1), AQICalculator.getAQI10(1), AQICalculator.getAQI25(2), 2200000, true, "Poland"), 2200000));
+        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 100000000), AQICalculator.getAQI10(100000000), AQICalculator.getAQI25(2), 2100000, false, "Berlin"), 2100000));
+        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 100000000), AQICalculator.getAQI10(100000000), AQICalculator.getAQI25(2), 2200000, true, "Berlin"), 2200000));
+        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 100000000), AQICalculator.getAQI10(100000000), AQICalculator.getAQI25(2), 2400000, false, "Berlin"), 2400000));
+        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 100000000), AQICalculator.getAQI10(100000000), AQICalculator.getAQI25(2), 2700000, false, "Berlin"), 2700000));
+        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 100000000), AQICalculator.getAQI10(100000000), AQICalculator.getAQI25(2), 2900000, true, "Berlin"), 2900000));
     }};
 
     private static class EventKeySelector implements KeySelector<MeasurementOwn, String> {
@@ -152,6 +152,8 @@ public class AQIValue24hProcessOperatorTests {
     }};
 
     public static StreamRecord<AQIValue24h> correct = new StreamRecord<>(new AQIValue24h(
+            -1,
+            -1,
             -1,
             -1,
             false,

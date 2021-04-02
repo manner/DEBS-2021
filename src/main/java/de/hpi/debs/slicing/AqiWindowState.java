@@ -3,7 +3,7 @@ package de.hpi.debs.slicing;
 import java.util.ArrayList;
 
 public class AqiWindowState {
-    protected ArrayList<Slice> slicesAqi;
+    protected ArrayList<AqiSlice> slicesAqi;
     protected long lastWatermark;
     protected int slicesNr;
     protected int checkpoint;
@@ -13,7 +13,7 @@ public class AqiWindowState {
 
     public AqiWindowState(String city, long start, long end) {
         this.slicesAqi = new ArrayList<>();
-        this.slicesAqi.add(new Slice(start, end));
+        this.slicesAqi.add(new AqiSlice(start, end));
         this.lastWatermark = start;
         this.slicesNr = 1;
         this.checkpoint = 0;
@@ -42,7 +42,7 @@ public class AqiWindowState {
         return slicesAqi.get(index).getEnd();
     }
 
-    public Slice getAqiSlice(int index) {
+    public AqiSlice getAqiSlice(int index) {
         return slicesAqi.get(index);
     }
 
@@ -57,13 +57,13 @@ public class AqiWindowState {
     public void addSlice(long step) {
         long lastEnd = slicesAqi.get(slicesNr - 1).getEnd();
 
-        slicesAqi.add(new Slice(lastEnd, lastEnd + step));
+        slicesAqi.add(new AqiSlice(lastEnd, lastEnd + step));
 
         ++slicesNr;
     }
 
-    public void addMeasure(int index, double aqi, long ts) {
-        slicesAqi.get(index).add(aqi, ts);
+    public void addMeasure(int index, double aqi, int aqiP1, int aqiP2, long ts) {
+        slicesAqi.get(index).add(aqi, aqiP1, aqiP2, ts);
 
         ++eventsSum;
     }

@@ -124,6 +124,8 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
 
                     output.collect(new StreamRecord<>(new AQIValue24h(
                             AQICalculator.getAQI(avgP2, avgP1),
+                            AQICalculator.getAQI10(avgP1),
+                            AQICalculator.getAQI25(avgP2),
                             curWindowEnd,
                             false,
                             (String) getCurrentKey()),
@@ -208,6 +210,8 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
 
                 output.collect(new StreamRecord<>(new AQIValue24h(
                         AQICalculator.getAQI(avgP2, avgP1),
+                        AQICalculator.getAQI10(avgP1),
+                        AQICalculator.getAQI25(avgP2),
                         wm,
                         true,
                         (String) getCurrentKey()),
