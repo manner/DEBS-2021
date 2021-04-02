@@ -66,6 +66,9 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
             return;
 
         if (value.getValue().isWatermark()) { // emit results on watermark arrival
+            if (state.value() == null) // in case no records are processed beforehand
+                return;
+
             long wm = value.getTimestamp();
             long lw = state.value().getLastWatermark();
             state.value().updateLastWatermark(wm);
