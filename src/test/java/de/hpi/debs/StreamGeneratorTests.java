@@ -184,24 +184,15 @@ public class StreamGeneratorTests {
         long timestamp;
         MeasurementOwn berlin = null;
         MeasurementOwn essen = null;
-        Measurement lastMeasurement;
-        long watermarkTimestamp = -1L;
-        long currentWatermark;
 
         try {
             for (Batch batch : batches) {
                 List<Measurement> allMeasurements = new ArrayList<>();
                 allMeasurements.addAll(batch.getCurrentList());
                 allMeasurements.addAll(batch.getLastyearList());
-                lastMeasurement = batch.getCurrentList().get(batch.getCurrentList().size() - 1);
-                currentWatermark = lastMeasurement.getTimestamp().getSeconds() * 1000 + lastMeasurement.getTimestamp().getNanos() / 1000;
                 for (Measurement m : allMeasurements) { // events should be emitted in same order as they are in batch
                     if (m.getLatitude() != 0.0F) {
                         timestamp = (long) (m.getTimestamp().getSeconds() * 1000.0 + m.getTimestamp().getNanos() / 1000.0);
-                        if (timestamp < 31536000000L && timestamp < watermarkTimestamp - 31536000000L)
-                            continue;
-                        if (timestamp >= 31536000000L && timestamp < watermarkTimestamp)
-                            continue;
                         if (m.getLatitude() == 51.42F) { // Essen
                             essen = new MeasurementOwn(
                                     m.getP1(),
@@ -227,14 +218,33 @@ public class StreamGeneratorTests {
                         }
                     }
                 }
-                watermarkTimestamp = currentWatermark;
+                Measurement lastMeasurement = batch.getCurrentList().get(batch.getCurrentList().size() - 1);
+                long watermarkTimestamp = lastMeasurement.getTimestamp().getSeconds() * 1000 + lastMeasurement.getTimestamp().getNanos() / 1000;
                 if (berlin != null) {
-                    berlin = MeasurementOwn.createWatermark(watermarkTimestamp, "Berlin Moabit");
-                    groundTruth.add(new StreamRecord<>(berlin, watermarkTimestamp));
+                    if (watermarkTimestamp < 31536000000L) {
+                        berlin = MeasurementOwn.createWatermark(watermarkTimestamp, "Berlin Moabit");
+                        groundTruth.add(new StreamRecord<>(berlin, berlin.getTimestamp()));
+                        berlin = MeasurementOwn.createWatermark(watermarkTimestamp + 31536000000L, "Berlin Moabit");
+                        groundTruth.add(new StreamRecord<>(berlin, berlin.getTimestamp()));
+                    } else {
+                        berlin = MeasurementOwn.createWatermark(watermarkTimestamp, "Berlin Moabit");
+                        groundTruth.add(new StreamRecord<>(berlin, berlin.getTimestamp()));
+                        berlin = MeasurementOwn.createWatermark(watermarkTimestamp - 31536000000L, "Berlin Moabit");
+                        groundTruth.add(new StreamRecord<>(berlin, berlin.getTimestamp()));
+                    }
                 }
                 if (essen != null) {
-                    essen = MeasurementOwn.createWatermark(watermarkTimestamp, "Essen");
-                    groundTruth.add(new StreamRecord<>(essen, watermarkTimestamp));
+                    if (watermarkTimestamp < 31536000000L) {
+                        essen = MeasurementOwn.createWatermark(watermarkTimestamp, "Essen");
+                        groundTruth.add(new StreamRecord<>(essen, essen.getTimestamp()));
+                        essen = MeasurementOwn.createWatermark(watermarkTimestamp + 31536000000L, "Essen");
+                        groundTruth.add(new StreamRecord<>(essen, essen.getTimestamp()));
+                    } else {
+                        essen = MeasurementOwn.createWatermark(watermarkTimestamp, "Essen");
+                        groundTruth.add(new StreamRecord<>(essen, essen.getTimestamp()));
+                        essen = MeasurementOwn.createWatermark(watermarkTimestamp - 31536000000L, "Essen");
+                        groundTruth.add(new StreamRecord<>(essen, essen.getTimestamp()));
+                    }
                 }
                 source.processBatch(testContext, batch);
             }
