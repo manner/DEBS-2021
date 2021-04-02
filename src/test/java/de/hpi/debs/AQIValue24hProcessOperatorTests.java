@@ -162,41 +162,41 @@ public class AQIValue24hProcessOperatorTests {
     public static class AQIValue24hProcessOperatorTestClass2 extends AQIValue24hProcessOperator {
 
         ArrayList<Slice> slicesPreWatermark = new ArrayList<>() {{
-            add((new Slice(start, start + v5minInMilliseconds) {{
+            add((new Slice(start, start + step) {{
                 add(1.0F, 3000);
                 add(1.0F, 250000);
             }}));
-            add((new Slice(start + v5minInMilliseconds, start + 2 * v5minInMilliseconds) {{
+            add((new Slice(start + step, start + 2 * step) {{
                 add(1000.0F, 350000);
             }}));
-            add((new Slice(start + 2 * v5minInMilliseconds, start + 3 * v5minInMilliseconds) {{
+            add((new Slice(start + 2 * step, start + 3 * step) {{
                 add(1000.0F, 650000);
             }}));
-            add((new Slice(start + 3 * v5minInMilliseconds, start + 4 * v5minInMilliseconds) {{
+            add((new Slice(start + 3 * step, start + 4 * step) {{
                 add(1.0F, 1100000);
             }}));
-            add((new Slice(start + 4 * v5minInMilliseconds, start + 5 * v5minInMilliseconds) {{
+            add((new Slice(start + 4 * step, start + 5 * step) {{
                 add(1.0F, 1400000);
             }}));
-            add((new Slice(start + 5 * v5minInMilliseconds, start + 6 * v5minInMilliseconds) {{
+            add((new Slice(start + 5 * step, start + 6 * step) {{
                 add(1.0F, 1700000);
             }}));
         }};
 
         ArrayList<Slice> slicesPostWatermark = new ArrayList<>() {{
-            add((new Slice(start + 2 * v5minInMilliseconds, start + 3 * v5minInMilliseconds) {{
+            add((new Slice(start + 2 * step, start + 3 * step) {{
                 add(1000.0F, 650000);
                 addToWindow(1002.0F, 3);
             }}));
-            add((new Slice(start + 3 * v5minInMilliseconds, start + 4 * v5minInMilliseconds) {{
+            add((new Slice(start + 3 * step, start + 4 * step) {{
                 add(1.0F, 1100000);
                 addToWindow(2000.0F, 2);
             }}));
-            add((new Slice(start + 4 * v5minInMilliseconds, start + 5 * v5minInMilliseconds) {{
+            add((new Slice(start + 4 * step, start + 5 * step) {{
                 add(1.0F, 1400000);
                 addToWindow(1001.0F, 2);
             }}));
-            add((new Slice(start + 5 * v5minInMilliseconds, start + 6 * v5minInMilliseconds) {{
+            add((new Slice(start + 5 * step, start + 6 * step) {{
                 add(1.0F, 1700000);
             }}));
         }};

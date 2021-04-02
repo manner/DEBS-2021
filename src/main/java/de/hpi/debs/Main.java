@@ -82,11 +82,19 @@ public class Main {
 
         DataStream<AQIValue5d> fiveDayStreamCurrentYear = aqiStreamCurrentYear // need more attributes
                 .keyBy(AQIValue24h::getCity)
-                .process(new AQIValueRollingPostProcessor());
+                .transform(
+                        "AQIValue24hProcessOperator",
+                        TypeInformation.of(AQIValue5d.class),
+                        new AQIValue5dProcessOperator(currentStart)
+                );
 
         DataStream<AQIValue5d> fiveDayStreamLastYear = aqiStreamLastYear // need more attributes
                 .keyBy(AQIValue24h::getCity)
-                .process(new AQIValueRollingPostProcessor());
+                .transform(
+                        "AQIValue24hProcessOperator",
+                        TypeInformation.of(AQIValue5d.class),
+                        new AQIValue5dProcessOperator(lastStart)
+                );
 
         DataStream<AQIImprovement> fiveDayImprovement = fiveDayStreamCurrentYear
                 .keyBy(AQIValue5d::getCity)

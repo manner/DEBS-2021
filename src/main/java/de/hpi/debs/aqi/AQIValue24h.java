@@ -15,6 +15,10 @@ public class AQIValue24h {
         this.city = city;
     }
 
+    public double getAQI() {
+        return aqi;
+    }
+
     public long getTimestamp() {
         return timestamp;
     }
