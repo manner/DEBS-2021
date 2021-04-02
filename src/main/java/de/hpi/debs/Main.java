@@ -57,12 +57,10 @@ public class Main {
         locationRetriever = new LocationRetriever(locations);
         //System.out.println(locations);
 
-        DataStream<MeasurementOwn> cities = env.addSource(new StreamGenerator(newBenchmark, 3));
+        DataStream<MeasurementOwn> cities = env.addSource(new StreamGenerator(newBenchmark, 100));
 
         DataStream<MeasurementOwn> lastYearCities = cities.filter(MeasurementOwn::isLastYear);
         DataStream<MeasurementOwn> currentYearCities = cities.filter(MeasurementOwn::isCurrentYear);
-
-        lastYearCities.print();
 
         DataStream<AQIValue24h> aqiStreamCurrentYear = currentYearCities
                 .keyBy(MeasurementOwn::getCity)
@@ -96,18 +94,23 @@ public class Main {
                         new AQIValue5dProcessOperator(lastStart)
                 );
 
+        //fiveDayStreamCurrentYear.print();
+        //fiveDayStreamLastYear.print();
+
         DataStream<AQIImprovement> fiveDayImprovement = fiveDayStreamCurrentYear
                 .keyBy(AQIValue5d::getCity)
                 .intervalJoin(fiveDayStreamLastYear.keyBy(AQIValue5d::getCity))
                 .between(Time.days(-365), Time.days(-365))
                 .process(new AQIImprovementProcessor());
 
+        //fiveDayImprovement.print();
+
         DataStream<AQIImprovement> top50 = fiveDayImprovement
                 .keyBy(AQIImprovement::getTimestamp)
                 .window(TumblingEventTimeWindows.of(Time.minutes(5)))
                 .process(new AQITop50Improvements());
 
-//        top50.print();
+        top50.print();
 
 //        DataStream<LongestStreakProcessor.Streak> streaks = aqiStreamCurrentYearTwo
 //                .keyBy(AQIValue24h::getCity)

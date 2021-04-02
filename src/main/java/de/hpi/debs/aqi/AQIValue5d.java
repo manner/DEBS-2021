@@ -23,12 +23,12 @@ public class AQIValue5d {
         return aqi;
     }
 
-    public double getCurAqiP1() {
-        return aqi;
+    public int getCurAqiP1() {
+        return curAqiP1;
     }
 
-    public double getCurAqiP2() {
-        return aqi;
+    public int getCurAqiP2() {
+        return curAqiP2;
     }
 
     public long getTimestamp() {

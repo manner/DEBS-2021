@@ -4,12 +4,16 @@ import java.util.Date;
 
 public class AQIImprovement implements Comparable<AQIImprovement> {
     private double improvement;
+    private int curAqiP1;
+    private int curAqiP2;
     private long timestamp;
     private String city;
     private boolean isWatermark;
 
-    public AQIImprovement(double improvement, long timestamp, String city, boolean isWatermark) {
+    public AQIImprovement(double improvement, int curAqiP1, int curAqiP2, long timestamp, String city, boolean isWatermark) {
         this.improvement = improvement;
+        this.curAqiP1 = curAqiP1;
+        this.curAqiP2 = curAqiP2;
         this.timestamp = timestamp;
         this.city = city;
         this.isWatermark = isWatermark;
@@ -51,7 +55,7 @@ public class AQIImprovement implements Comparable<AQIImprovement> {
     public String toString() {
         return "AQIImprovement{" +
                 "improvement=" + improvement +
-                ", timestamp=" + new Date(timestamp).toGMTString() +
+                ", timestamp=" + new Date(timestamp).toString() +
                 ", city=" + city +
                 '}';
     }

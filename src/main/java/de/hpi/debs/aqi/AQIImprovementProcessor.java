@@ -7,8 +7,15 @@ import java.util.Date;
 
 public class AQIImprovementProcessor extends ProcessJoinFunction<AQIValue5d, AQIValue5d, AQIImprovement> {
     @Override
-    public void processElement(AQIValue5d currentYear, AQIValue5d lastYear, Context ctx, Collector<AQIImprovement> out) throws Exception {
+    public void processElement(AQIValue5d currentYear, AQIValue5d lastYear, Context ctx, Collector<AQIImprovement> out) {
         double improvement = lastYear.getAQI() - currentYear.getAQI();
-        out.collect(new AQIImprovement(improvement, currentYear.getTimestamp(), currentYear.getCity(), currentYear.isWatermark()));
+        out.collect(new AQIImprovement(
+                improvement,
+                currentYear.getCurAqiP1(),
+                currentYear.getCurAqiP2(),
+                currentYear.getTimestamp(),
+                currentYear.getCity(),
+                currentYear.isWatermark()
+        ));
     }
 }
