@@ -129,8 +129,8 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
     public void run(SourceContext<MeasurementOwn> context) {
 
         while (running) {
-//            Batch batch = Main.challengeClient.nextBatch(benchmark);
-            Batch batch = BatchSerializer.getBatch(Main.challengeClient, benchmark, cnt);
+            Batch batch = Main.challengeClient.nextBatch(benchmark);
+//            Batch batch = BatchSerializer.getBatch(Main.challengeClient, benchmark, cnt);
 
             processBatch(context, batch);
         }

@@ -6,6 +6,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
 
+import java.io.Serializable;
 import java.util.Optional;
 
 public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValue24h, LongestStreakProcessor.Streak> {
@@ -40,25 +41,8 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
             out.collect(streak);
         }
     }
-//
-//    public static class StreakMap {
-//        private HashMap<String, Streak> streakMap;
-//
-//        public HashMap<String, Streak> getStreakMap() {
-//            return streakMap;
-//        }
-//
-//        public void put(String key, Streak streak) {
-//            streakMap.put(key, streak);
-//        }
-//
-//        public Streak get(String key) {
-//            return streakMap.get(key);
-//        }
-//    }
 
-
-    public static class Streak {
+    public static class Streak implements Serializable {
         private long timestampLastMeasurement;
         private Optional<Long> timestampSinceGoodAQI;
         private String city;
@@ -81,9 +65,10 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
                     '}';
         }
 
-        public boolean isActive(long time) {
-//            time - 10 min > lastMeasurement
-            return true;
+        public Integer getBucket(long watermarkTimestamp, int bucketSize) {
+            return timestampSinceGoodAQI
+                    .map(ts -> (int) Math.floor((watermarkTimestamp - ts) / (float) bucketSize))
+                    .orElse(0);
         }
 
         public void setTimestampSinceGoodAQI(Long timestamp) {
