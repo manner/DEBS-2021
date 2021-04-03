@@ -60,11 +60,12 @@ public class HistogramOperator extends ProcessOperator<LongestStreakProcessor.St
                 .setBenchmarkId(benchmarkId)
                 .build();
         Main.challengeClient.resultQ2(result);
+        streaks.clear();
     }
 
     private int getBucketSize(long watermarkTimestamp) {
         long firstTimestampInBatch = 1583020800000L; // TODO: FIX THIS!
-        long bucketSize = (watermarkTimestamp - firstTimestampInBatch) / 14;
+        long bucketSize = Math.max(0, (watermarkTimestamp - firstTimestampInBatch) / 14);
         return (int) Math.min(bucketSize, Time.days(7).toMilliseconds());
     }
 
