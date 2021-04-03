@@ -56,7 +56,7 @@ public class AQIValue24h {
             return this.aqi == that.aqi
                     && this.timestamp == that.timestamp
                     && this.watermark == that.watermark
-                    && this.city == null ? that.city == null : this.city.equals(that.city);
+                    && this.city.equals(that.city);
         } else {
             return false;
         }
@@ -66,6 +66,8 @@ public class AQIValue24h {
     public String toString() {
         return "AQIValue24h{" +
                 "AQI=" + aqi +
+                ", aqiP1=" + aqiP1 +
+                ", aqiP2=" + aqiP2 +
                 ", timestamp=" + new Date(timestamp).toString() +
                 ", city='" + city + '\'' +
                 ", isWatermark='" + isWatermark() +

@@ -99,8 +99,6 @@ public class ParticleWindowState {
 
     public void removeEmptyTail() {
         while (!slicesP1.isEmpty() && slicesP1.get(0).isEmpty()) {
-            eventsSum -= slicesP1.get(0).getSum();
-
             slicesP1.remove(0);
             slicesP2.remove(0);
 

@@ -139,7 +139,7 @@ public class MeasurementOwn implements Serializable {
                     && this.longitude == that.longitude
                     && this.timestamp == that.timestamp
                     && this.isWatermark == that.isWatermark
-                    && this.city == null ? that.city == null : this.city.equals(that.city);
+                    && this.city.equals(that.city);
         } else {
             return false;
         }
