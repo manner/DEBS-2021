@@ -16,13 +16,14 @@ import java.util.Map;
 import java.util.Optional;
 
 public class StreamGenerator implements SourceFunction<MeasurementOwn> {
+
+    private static final long A_YEAR = Time.days(365).toMilliseconds();
     private volatile boolean running = true;
     private int cnt = 0;
     private final int batchNumbers;
     private final Benchmark benchmark;
     private final HashMap<String, Long> cities;
     private final HashMap<String, Long> lastYearCities;
-
 
     public StreamGenerator(
             Benchmark benchmarkIn,
@@ -45,7 +46,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
             lastMeasurement = lastYearList.get(lastYearList.size() - 1);
             watermarkTimestamp = lastMeasurement.getTimestamp().getSeconds() * 1000;
             watermarkTimestamp += lastMeasurement.getTimestamp().getNanos() / 1000;
-            watermarkTimestamp += 31536000000L;
+            watermarkTimestamp += A_YEAR;
         } else {
             lastMeasurement = currentYearList.get(currentYearList.size() - 1);
             watermarkTimestamp = lastMeasurement.getTimestamp().getSeconds() * 1000;
@@ -100,9 +101,9 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
             long lastTimestampOfCity = city.getValue();
 
             // check if city is active
-            if (lastTimestampOfCity >= watermarkTimestamp - 31536000000L - Time.minutes(10).toMilliseconds()) {
+            if (lastTimestampOfCity >= watermarkTimestamp - A_YEAR - Time.minutes(10).toMilliseconds()) {
                 MeasurementOwn watermark = new MeasurementOwn(0, 0, 0, 0, watermarkTimestamp - 31536000000L, city.getKey(), true);
-                context.collectWithTimestamp(watermark, watermarkTimestamp - 31536000000L);
+                context.collectWithTimestamp(watermark, watermarkTimestamp - A_YEAR);
             }
         }
 
@@ -128,8 +129,8 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
     public void run(SourceContext<MeasurementOwn> context) {
 
         while (running) {
-//            Batch batch = Main.challengeClient.nextBatch(benchmark);
-            Batch batch = BatchSerializer.getBatch(Main.challengeClient, benchmark, cnt);
+            Batch batch = Main.challengeClient.nextBatch(benchmark);
+//            Batch batch = BatchSerializer.getBatch(Main.challengeClient, benchmark, cnt);
 
             processBatch(context, batch);
         }

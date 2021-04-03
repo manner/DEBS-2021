@@ -1,6 +1,5 @@
 package de.hpi.debs;
 
-import de.hpi.debs.aqi.*;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -8,6 +7,14 @@ import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
+import de.hpi.debs.aqi.AQIImprovement;
+import de.hpi.debs.aqi.AQIImprovementProcessor;
+import de.hpi.debs.aqi.AQITop50Improvements;
+import de.hpi.debs.aqi.AQIValue24h;
+import de.hpi.debs.aqi.AQIValue24hProcessOperator;
+import de.hpi.debs.aqi.AQIValue5d;
+import de.hpi.debs.aqi.AQIValue5dProcessOperator;
+import de.hpi.debs.aqi.LongestStreakProcessor;
 import de.hpi.debs.serializer.LocationSerializer;
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.BenchmarkConfiguration;
@@ -107,11 +114,14 @@ public class Main {
 
         top50.print();
 
-//        DataStream<LongestStreakProcessor.Streak> streaks = aqiStreamCurrentYearTwo
-//                .keyBy(AQIValue24h::getCity)
-//                .process(new LongestStreakProcessor());
-//        streaks.print();
-
+        aqiStreamCurrentYear
+                .keyBy(AQIValue24h::getCity)
+                .process(new LongestStreakProcessor())
+                .transform(
+                        "histogram",
+                        TypeInformation.of(Void.class),
+                        new HistogramOperator(newBenchmark.getId())
+                );
 
         //seven day window is little bit different than the five day window and will not use the "rolling" processor
 
