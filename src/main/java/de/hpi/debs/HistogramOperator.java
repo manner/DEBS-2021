@@ -53,6 +53,10 @@ public class HistogramOperator extends ProcessOperator<LongestStreakProcessor.St
 
     @Override
     public void processWatermark(Watermark mark) throws Exception {
+        // Fix to avoid weird watermark in year 292278994
+        if (mark.getTimestamp() > 1898553600000L) {
+            return;
+        }
         List<TopKStreaks> topKStreaks = calculate(streaks.get(), mark.getTimestamp());
         ResultQ2 result = ResultQ2.newBuilder()
                 .addAllHistogram(topKStreaks)
@@ -66,7 +70,8 @@ public class HistogramOperator extends ProcessOperator<LongestStreakProcessor.St
     private int getBucketSize(long watermarkTimestamp) {
         long firstTimestampInBatch = 1583020800000L; // TODO: FIX THIS!
         long bucketSize = Math.max(0, (watermarkTimestamp - firstTimestampInBatch) / 14);
-        return (int) Math.min(bucketSize, Time.days(7).toMilliseconds());
+        long maxBucketSize = Time.days(7).toMilliseconds() / 14;
+        return (int) Math.min(bucketSize, maxBucketSize);
     }
 
     private List<TopKStreaks> calculate(Iterable<LongestStreakProcessor.Streak> streaks, long watermarkTimestamp) {

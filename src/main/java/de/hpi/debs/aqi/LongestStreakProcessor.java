@@ -2,6 +2,7 @@ package de.hpi.debs.aqi;
 
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
+import org.apache.flink.api.common.time.Time;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
@@ -28,7 +29,7 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
 
         if (aqiValue.isGood()) {
             if (streak.isBadStreak()) {
-                streak.setTimestampSinceGoodAQI(aqiValue.getTimestamp());
+                streak.startStreak(aqiValue.getTimestamp());
             }
         } else {
             streak.fail();
@@ -67,11 +68,16 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
 
         public Integer getBucket(long watermarkTimestamp, int bucketSize) {
             return timestampSinceGoodAQI
-                    .map(ts -> (int) Math.floor((watermarkTimestamp - ts) / (float) bucketSize))
+                    .map(ts -> {
+                                long streakInMs = watermarkTimestamp - ts;
+                                long streak = Math.min(streakInMs, Time.days(7).toMilliseconds());
+                                return (int) (Math.floor((float) streak / bucketSize));
+                            }
+                    )
                     .orElse(0);
         }
 
-        public void setTimestampSinceGoodAQI(Long timestamp) {
+        public void startStreak(Long timestamp) {
             timestampSinceGoodAQI = Optional.of(timestamp);
         }
 
