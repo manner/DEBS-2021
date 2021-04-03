@@ -26,7 +26,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
 
         long currentStart = 1577833200000L;
-        long lastStart = currentStart - 31536000000L; // 365 days before
+        long lastStart = currentStart - Time.days(365).toMilliseconds(); // 365 days before
 
         ManagedChannel channel = ManagedChannelBuilder
                 .forAddress("challenge.msrg.in.tum.de", 5023)
@@ -57,7 +57,7 @@ public class Main {
         locationRetriever = new LocationRetriever(locations);
         //System.out.println(locations);
 
-        DataStream<MeasurementOwn> cities = env.addSource(new StreamGenerator(newBenchmark, 100));
+        DataStream<MeasurementOwn> cities = env.addSource(new StreamGenerator(newBenchmark, 3));
 
         DataStream<MeasurementOwn> lastYearCities = cities.filter(MeasurementOwn::isLastYear);
         DataStream<MeasurementOwn> currentYearCities = cities.filter(MeasurementOwn::isCurrentYear);
@@ -81,7 +81,7 @@ public class Main {
         DataStream<AQIValue5d> fiveDayStreamCurrentYear = aqiStreamCurrentYear // need more attributes
                 .keyBy(AQIValue24h::getCity)
                 .transform(
-                        "AQIValue24hProcessOperator",
+                        "AQIValue5dProcessOperator",
                         TypeInformation.of(AQIValue5d.class),
                         new AQIValue5dProcessOperator(currentStart)
                 );
@@ -89,21 +89,16 @@ public class Main {
         DataStream<AQIValue5d> fiveDayStreamLastYear = aqiStreamLastYear // need more attributes
                 .keyBy(AQIValue24h::getCity)
                 .transform(
-                        "AQIValue24hProcessOperator",
+                        "AQIValue5dProcessOperator",
                         TypeInformation.of(AQIValue5d.class),
                         new AQIValue5dProcessOperator(lastStart)
                 );
-
-        //fiveDayStreamCurrentYear.print();
-        //fiveDayStreamLastYear.print();
 
         DataStream<AQIImprovement> fiveDayImprovement = fiveDayStreamCurrentYear
                 .keyBy(AQIValue5d::getCity)
                 .intervalJoin(fiveDayStreamLastYear.keyBy(AQIValue5d::getCity))
                 .between(Time.days(-365), Time.days(-365))
                 .process(new AQIImprovementProcessor());
-
-        //fiveDayImprovement.print();
 
         DataStream<AQIImprovement> top50 = fiveDayImprovement
                 .keyBy(AQIImprovement::getTimestamp)
@@ -121,7 +116,7 @@ public class Main {
         //seven day window is little bit different than the five day window and will not use the "rolling" processor
 
         DiscardingSink<AQIImprovement> sink = new DiscardingSink<>();
-        fiveDayImprovement.addSink(sink);
+        top50.addSink(sink);
 
         //Start the benchmark
         System.out.println(challengeClient.startBenchmark(newBenchmark));
