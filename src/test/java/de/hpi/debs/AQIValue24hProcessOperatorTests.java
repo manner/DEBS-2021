@@ -63,7 +63,7 @@ public class AQIValue24hProcessOperatorTests {
         add(new StreamRecord<>(new MeasurementOwn(0.0F, 0.0F, 0, 0, 2200000, "Poland", true), 2200000));
         add(new StreamRecord<>(new MeasurementOwn(0.0F, 0.0F, 0, 0, 2200000, "Berlin", true), 2200000));
         add(new StreamRecord<>(null, 2200000));
-        add(new StreamRecord<>(new MeasurementOwn(1.0F, 2.0F, 0, 0, 2201000, "Berlin", false), 2201000));
+        add(new StreamRecord<>(new MeasurementOwn(1.0F, 2.0F, 0, 0, 2201000, "Berlin", false), 2201000)); // late event should not create an output
         add(new StreamRecord<>(new MeasurementOwn(0.0F, 0.0F, 0, 0, 2900000, "Berlin", true), 2900000));
         add(new StreamRecord<>(null, 2900000));
     }};
@@ -88,7 +88,6 @@ public class AQIValue24hProcessOperatorTests {
         add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 100000000), AQICalculator.getAQI10(100000000), AQICalculator.getAQI25(2), 2200000, true, "Berlin"), 2200000));
         add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 100000000), AQICalculator.getAQI10(100000000), AQICalculator.getAQI25(2), 2400000, false, "Berlin"), 2400000));
         add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 100000000), AQICalculator.getAQI10(100000000), AQICalculator.getAQI25(2), 2700000, false, "Berlin"), 2700000));
-        add(new StreamRecord<>(new AQIValue24h(AQICalculator.getAQI(2, 100000000), AQICalculator.getAQI10(100000000), AQICalculator.getAQI25(2), 2900000, true, "Berlin"), 2900000));
     }};
 
     private static class EventKeySelector implements KeySelector<MeasurementOwn, String> {
@@ -127,6 +126,14 @@ public class AQIValue24hProcessOperatorTests {
         }
 
         int i = 0;
+        int wmCount = 0;
+
+        for (StreamRecord<MeasurementOwn> item : events) {
+            if (item.getValue() == null)
+                ++wmCount;
+        }
+
+        assertEquals(groundTruth.size() + wmCount, testHarness.getOutput().size(), "Output has not correct number of events.");
 
         for (Object item : testHarness.getOutput()) {
             if (item.getClass() == StreamRecord.class) {

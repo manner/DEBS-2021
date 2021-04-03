@@ -94,7 +94,7 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
                 active = false;
 
                 if (0 < i) { // use pre-aggregate if possible
-                    if (window.preAggregate(i)) {
+                    if (state.value().preAggregate(i)) {
                         // get aggregate of previous windows
                         deltaWindowSum1 = window.getP1Slice(i - 1).getWindowSum();
                         deltaWindowSum2 = window.getP2Slice(i - 1).getWindowSum();
@@ -108,7 +108,7 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
                             deltaWindowCount -= window.getP2Slice(startIdx).getCount();
                         }
 
-                        window.addPreAggregate(i, deltaWindowSum1, deltaWindowSum2, deltaWindowCount);
+                        state.value().addPreAggregate(i, deltaWindowSum1, deltaWindowSum2, deltaWindowCount);
                     }
 
                     if (!window.getP1Slice(i - 1).isEmpty())
@@ -119,8 +119,8 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
                     active = true;
 
                 if (active && lw < curWindowEnd) {
-                    float avgP1 = (float) window.getP1Slice(i).getWindowAvg();
-                    float avgP2 = (float) window.getP2Slice(i).getWindowAvg();
+                    float avgP1 = (float) state.value().getP1Slice(i).getWindowAvg();
+                    float avgP2 = (float) state.value().getP2Slice(i).getWindowAvg();
 
                     output.collect(new StreamRecord<>(new AQIValue24h(
                             AQICalculator.getAQI(avgP2, avgP1),
