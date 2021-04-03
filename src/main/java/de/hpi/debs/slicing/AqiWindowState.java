@@ -88,8 +88,6 @@ public class AqiWindowState {
 
     public void removeEmptyTail() {
         while (!slicesAqi.isEmpty() && slicesAqi.get(0).isEmpty()) {
-            eventsSum -= slicesAqi.get(0).getSum();
-
             slicesAqi.remove(0);
 
             --slicesNr;

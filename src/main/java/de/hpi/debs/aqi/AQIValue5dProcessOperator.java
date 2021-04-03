@@ -36,7 +36,7 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
         this.vDeltaIdx = (int)(size / step) - 1;
     }
 
-    /*public AQIValue5dProcessOperator(long start, long size, long step) {
+    public AQIValue5dProcessOperator(long start, long size, long step) {
         super(
                 new KeyedProcessFunction<>() {
                     @Override
@@ -51,7 +51,7 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
         this.step = step;
         this.doubleStep = 2 * this.step;
         this.vDeltaIdx = (int)(this.size / this.step) - 1;
-    }*/
+    }
 
     @Override
     public void open() {
@@ -64,8 +64,11 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
             return;
 
         if (value.getValue().isWatermark()) { // emit results on watermark arrival
-            if (state.value() == null) // in case no records are processed beforehand
+            if (state.value() == null) { // in case no records are processed beforehand watermark has all values
+
+                output.collect(new StreamRecord<>(new AQIValue5d(value.getValue()), value.getTimestamp()));
                 return;
+            }
 
             long wm = value.getTimestamp();
             long lw = state.value().getLastWatermark();
@@ -76,7 +79,6 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
             int deltaWindowCount;
             int startIdx;
             long curWindowEnd;
-            boolean active;
 
             // go to first slice that need to emit window result
             int i = window.getSlicesNr() - 1;
@@ -87,11 +89,9 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
             curWindowEnd = window.getEndOfSlice(i);
 
             // emit results of pending windows
-            while (curWindowEnd < wm) {
-                active = false;
-
+            while (curWindowEnd <= wm) {
                 if (0 < i) { // use pre-aggregate if possible
-                    if (window.preAggregate(i)) {
+                    if (state.value().preAggregate(i)) {
                         // get aggregate of previous windows
                         deltaWindowSum = window.getAqiSlice(i - 1).getWindowSum();
                         deltaWindowCount = window.getAqiSlice(i - 1).getWindowCount();
@@ -103,18 +103,12 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
                             deltaWindowCount -= window.getAqiSlice(startIdx).getCount();
                         }
 
-                        window.addPreAggregate(i, deltaWindowSum, deltaWindowCount);
+                        state.value().addPreAggregate(i, deltaWindowSum, deltaWindowCount);
                     }
-
-                    if (!window.getAqiSlice(i - 1).isEmpty())
-                        active = true;
                 }
 
-                if (!window.getAqiSlice(i).isEmpty()) // check if window is active
-                    active = true;
-
-                if (active && lw < curWindowEnd) {
-                    double avgAqi = window.getAqiSlice(i).getWindowAvg();
+                if (!window.getAqiSlice(i).isEmpty() && lw < curWindowEnd) {
+                    double avgAqi = state.value().getAqiSlice(i).getWindowAvg();
                     int curAqiP1 = window.getAqiSlice(i).getAqiP1s().get(0);
                     int curAqiP2 = window.getAqiSlice(i).getAqiP2s().get(0);
 
@@ -137,70 +131,16 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
                 curWindowEnd = state.value().getEndOfSlice(i);
             }
 
-            // emit "watermark window"
-            deltaWindowSum = 0.0;
-            deltaWindowCount = 0;
-            active = false;
-
-            if (0 < i) { // use pre-aggregated results of previous windows if not already done
-                deltaWindowSum = window.getAqiSlice(i - 1).getWindowSum();
-                deltaWindowCount = window.getAqiSlice(i - 1).getWindowCount();
-
-                startIdx = i - 1 - vDeltaIdx; // first slice of previous window
-
-                if (0 <= startIdx) { // check if there is a slice that we need to subtract from first 24h window
-                    deltaWindowSum -= window.getAqiSlice(startIdx).getSum();
-                    deltaWindowCount -= window.getAqiSlice(startIdx).getCount();
-
-                    long watermarkWindowStart = wm - size;
-
-                    for (Event event : window.getAqiSlice(startIdx).getEvents()) {
-                        if (event.getTimestamp() < watermarkWindowStart) {
-                            deltaWindowSum -= event.getValue();
-                            --deltaWindowCount;
-                        }
-                    }
-                }
-
-                // check if "watermark window" is active
-                if (!window.getAqiSlice(i - 1).isEmpty())
-                    active = true;
-
-                if (1 < i && !window.getAqiSlice(i - 2).isEmpty()) {
-                    long before10MinInSec = wm - doubleStep;
-
-                    for (Event event : window.getAqiSlice(i - 2).getEvents())
-                        if (before10MinInSec <= event.getTimestamp()) {
-                            active = true;
-                            break;
-                        }
-                }
-            }
-
-            // add events from last slice that belong to "watermark window"
-            for (Event event : window.getAqiSlice(i).getEvents()) {
-                if (event.getTimestamp() < wm) {
-                    deltaWindowSum += event.getValue();
-                    ++deltaWindowCount;
-                    active = true;
-                }
-            }
-
-            if (active) { // check if in last v24hInSec where tuples emitted
-                double avgAqi = deltaWindowSum / deltaWindowCount;
-                int curAqiP1 = window.getAqiSlice(i).getAqiP1s().get(window.getAqiSlice(i).getAqiP1s().size() - 1);
-                int curAqiP2 = window.getAqiSlice(i).getAqiP2s().get(window.getAqiSlice(i).getAqiP2s().size() - 1);
-
-                output.collect(new StreamRecord<>(new AQIValue5d(
-                        avgAqi,
-                        curAqiP1,
-                        curAqiP2,
-                        wm,
-                        true,
-                        (String) getCurrentKey()),
-                        wm
-                ));
-            }
+            // emit watermark with current 24h averages
+            output.collect(new StreamRecord<>(new AQIValue5d(
+                    value.getValue().getAqi(),
+                    value.getValue().getAqiP1(),
+                    value.getValue().getAqiP2(),
+                    wm,
+                    true,
+                    value.getValue().getCity()),
+                    wm
+            ));
 
             // remove slices that are already emitted and disjoint with all remaining windows that will be emitted
             state.value().removeSlices(wm - size);
@@ -217,12 +157,11 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
         }
 
         if (state.value() == null) {
-            long newStart = (value.getTimestamp() - start) % step;
-            newStart = value.getTimestamp() - newStart; // get correct start of window in case city measures very late
+            long newStart = value.getTimestamp() - size;
             state.update(new AqiWindowState(
                     (String) getCurrentKey(),
                     newStart,
-                    newStart + step
+                    value.getTimestamp()
             ));
         }
 
@@ -232,6 +171,8 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
 
         // search for correct slice
         while (in != 0) {
+            if (state.value().getAqiSlice(i).getEnd() == value.getTimestamp()) // as AQIValue24h slices are mapped to AQIValue5d slices with same end
+                break;
             if (in < 0) { // go one slice to the past
                 --i;
             } else {
