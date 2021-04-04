@@ -3,13 +3,11 @@ package de.hpi.debs;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
-import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
 import de.hpi.debs.aqi.AQIImprovement;
 import de.hpi.debs.aqi.AQIImprovementProcessor;
-import de.hpi.debs.aqi.AQITop50Improvements;
+import de.hpi.debs.aqi.AQITop50ImprovementsOperator;
 import de.hpi.debs.aqi.AQIValue24h;
 import de.hpi.debs.aqi.AQIValue24hProcessOperator;
 import de.hpi.debs.aqi.AQIValue5d;
@@ -96,7 +94,7 @@ public class Main {
         DataStream<AQIValue5d> fiveDayStreamLastYear = aqiStreamLastYear // need more attributes
                 .keyBy(AQIValue24h::getCity)
                 .transform(
-                        "AQIValue5dProcessOperator",
+                        "AQIValue24hProcessOperator",
                         TypeInformation.of(AQIValue5d.class),
                         new AQIValue5dProcessOperator(lastStart)
                 );
@@ -107,12 +105,12 @@ public class Main {
                 .between(Time.days(-365), Time.days(-365))
                 .process(new AQIImprovementProcessor());
 
-        DataStream<AQIImprovement> top50 = fiveDayImprovement
-                .keyBy(AQIImprovement::getTimestamp)
-                .window(TumblingEventTimeWindows.of(Time.minutes(5)))
-                .process(new AQITop50Improvements());
-
-        top50.print();
+        fiveDayImprovement
+                .transform(
+                        "top50cities",
+                        TypeInformation.of(Void.class),
+                        new AQITop50ImprovementsOperator(newBenchmark.getId())
+                );
 
         aqiStreamCurrentYear
                 .keyBy(AQIValue24h::getCity)
@@ -122,11 +120,6 @@ public class Main {
                         TypeInformation.of(Void.class),
                         new HistogramOperator(newBenchmark.getId())
                 );
-
-        //seven day window is little bit different than the five day window and will not use the "rolling" processor
-
-        DiscardingSink<AQIImprovement> sink = new DiscardingSink<>();
-        top50.addSink(sink);
 
         //Start the benchmark
         System.out.println(challengeClient.startBenchmark(newBenchmark));
