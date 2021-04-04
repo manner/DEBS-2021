@@ -10,6 +10,7 @@ import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.util.Collector;
 
 import de.hpi.debs.aqi.LongestStreakProcessor;
+import de.hpi.debs.aqi.Streak;
 import de.tum.i13.bandency.ResultQ2;
 import de.tum.i13.bandency.TopKStreaks;
 
@@ -18,16 +19,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class HistogramOperator extends ProcessOperator<LongestStreakProcessor.Streak, Void> {
+public class HistogramOperator extends ProcessOperator<Streak, Void> {
 
     private final long benchmarkId;
-    protected ListState<LongestStreakProcessor.Streak> streaks;
+    protected ListState<Streak> streaks;
     private int seqCounter;
 
     public HistogramOperator(long benchmarkId) {
         super(new ProcessFunction<>() {
             @Override
-            public void processElement(LongestStreakProcessor.Streak value, Context ctx, Collector<Void> out) {
+            public void processElement(Streak value, Context ctx, Collector<Void> out) {
                 // do nothing as we are doing everything in the operator
             }
         });
@@ -37,17 +38,17 @@ public class HistogramOperator extends ProcessOperator<LongestStreakProcessor.St
 
     @Override
     public void open() throws Exception {
-        ListStateDescriptor<LongestStreakProcessor.Streak> descriptor =
+        ListStateDescriptor<Streak> descriptor =
                 new ListStateDescriptor<>(
                         "streaks",
-                        LongestStreakProcessor.Streak.class);
+                        Streak.class);
 
         streaks = getOperatorStateBackend().getListState(descriptor);
     }
 
 
     @Override
-    public void processElement(StreamRecord<LongestStreakProcessor.Streak> value) throws Exception {
+    public void processElement(StreamRecord<Streak> value) throws Exception {
         streaks.add(value.getValue());
     }
 
@@ -74,11 +75,11 @@ public class HistogramOperator extends ProcessOperator<LongestStreakProcessor.St
         return (int) Math.min(bucketSize, maxBucketSize);
     }
 
-    private List<TopKStreaks> calculate(Iterable<LongestStreakProcessor.Streak> streaks, long watermarkTimestamp) {
+    private List<TopKStreaks> calculate(Iterable<Streak> streaks, long watermarkTimestamp) {
         int bucketSize = getBucketSize(watermarkTimestamp);
         Map<Integer, Integer> streaksPerBucket = new HashMap<>();
 
-        for (LongestStreakProcessor.Streak streak : streaks) {
+        for (Streak streak : streaks) {
             int bucket = streak.getBucket(watermarkTimestamp, bucketSize);
             Integer count = streaksPerBucket.get(bucket);
             streaksPerBucket.put(bucket, count != null ? count + 1 : 1);
@@ -86,6 +87,7 @@ public class HistogramOperator extends ProcessOperator<LongestStreakProcessor.St
         int totalStreaks = streaksPerBucket.values().stream().mapToInt(Integer::intValue).sum();
 
         List<TopKStreaks> topKStreaks = new ArrayList<>(14);
+        System.out.println("Batch: " + watermarkTimestamp);
         for (int i = 0; i < 14; i++) {
             Integer numberOfStreaks = streaksPerBucket.get(i);
             int percent;

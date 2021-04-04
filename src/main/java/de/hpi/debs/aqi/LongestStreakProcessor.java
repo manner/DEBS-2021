@@ -10,7 +10,7 @@ import org.apache.flink.util.Collector;
 import java.io.Serializable;
 import java.util.Optional;
 
-public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValue24h, LongestStreakProcessor.Streak> {
+public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValue24h, Streak> {
     private ValueState<Streak> streakValueState;
 
     @Override
@@ -40,53 +40,6 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
 
         if (aqiValue.isWatermark()) {
             out.collect(streak);
-        }
-    }
-
-    public static class Streak implements Serializable {
-        private long timestampLastMeasurement;
-        private Optional<Long> timestampSinceGoodAQI;
-        private String city;
-
-        public Streak(String city) {
-            this.city = city;
-            this.timestampSinceGoodAQI = Optional.empty();
-        }
-
-        public void setTimestampLastMeasurement(long timestampLastMeasurement) {
-            this.timestampLastMeasurement = timestampLastMeasurement;
-        }
-
-        @Override
-        public String toString() {
-            return "Streak{" +
-                    "timestampLastMeasurement=" + timestampLastMeasurement +
-                    ", timestampSinceGoodAQI=" + timestampSinceGoodAQI +
-                    ", city='" + city + '\'' +
-                    '}';
-        }
-
-        public Integer getBucket(long watermarkTimestamp, int bucketSize) {
-            return timestampSinceGoodAQI
-                    .map(ts -> {
-                                long streakInMs = watermarkTimestamp - ts;
-                                long streak = Math.min(streakInMs, Time.days(7).toMilliseconds());
-                                return (int) (Math.floor((float) streak / bucketSize));
-                            }
-                    )
-                    .orElse(0);
-        }
-
-        public void startStreak(Long timestamp) {
-            timestampSinceGoodAQI = Optional.of(timestamp);
-        }
-
-        public boolean isBadStreak() {
-            return timestampSinceGoodAQI.isEmpty();
-        }
-
-        public void fail() {
-            timestampSinceGoodAQI = Optional.empty();
         }
     }
 }
