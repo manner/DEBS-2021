@@ -1,5 +1,6 @@
 package de.hpi.debs;
 
+import de.hpi.debs.aqi.*;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -7,14 +8,6 @@ import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
-import de.hpi.debs.aqi.AQIImprovement;
-import de.hpi.debs.aqi.AQIImprovementProcessor;
-import de.hpi.debs.aqi.AQITop50Improvements;
-import de.hpi.debs.aqi.AQIValue24h;
-import de.hpi.debs.aqi.AQIValue24hProcessOperator;
-import de.hpi.debs.aqi.AQIValue5d;
-import de.hpi.debs.aqi.AQIValue5dProcessOperator;
-import de.hpi.debs.aqi.LongestStreakProcessor;
 import de.hpi.debs.serializer.LocationSerializer;
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.BenchmarkConfiguration;
@@ -54,7 +47,7 @@ public class Main {
                 .build();
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(4); // sets the number of parallel for each instance
+        env.setParallelism(1); // sets the number of parallel for each instance
 
         // Create a new Benchmark
         Benchmark newBenchmark = challengeClient.createNewBenchmark(bc);
@@ -64,7 +57,7 @@ public class Main {
         locationRetriever = new LocationRetriever(locations);
         //System.out.println(locations);
 
-        DataStream<MeasurementOwn> cities = env.addSource(new StreamGenerator(newBenchmark, 3));
+        DataStream<MeasurementOwn> cities = env.addSource(new StreamGenerator(newBenchmark, 100));
 
         DataStream<MeasurementOwn> lastYearCities = cities.filter(MeasurementOwn::isLastYear);
         DataStream<MeasurementOwn> currentYearCities = cities.filter(MeasurementOwn::isCurrentYear);
@@ -103,16 +96,25 @@ public class Main {
 
         DataStream<AQIImprovement> fiveDayImprovement = fiveDayStreamCurrentYear
                 .keyBy(AQIValue5d::getCity)
-                .intervalJoin(fiveDayStreamLastYear.keyBy(AQIValue5d::getCity))
-                .between(Time.days(-365), Time.days(-365))
-                .process(new AQIImprovementProcessor());
+                .connect(fiveDayStreamLastYear.keyBy(AQIValue5d::getCity))
+                .keyBy(AQIValue5d::getCity, AQIValue5d::getCity)
+                .transform(
+                        "OurJoinOperator",
+                        TypeInformation.of(AQIImprovement.class),
+                        new AQIImprovementProcessorOperator()
+                );
+                //.intervalJoin(fiveDayStreamLastYear.keyBy(AQIValue5d::getCity))
+                //.between(Time.days(-365), Time.days(-365))
+                //.process(new AQIImprovementProcessor());
+
+        fiveDayImprovement.print();
 
         DataStream<AQIImprovement> top50 = fiveDayImprovement
                 .keyBy(AQIImprovement::getTimestamp)
                 .window(TumblingEventTimeWindows.of(Time.minutes(5)))
                 .process(new AQITop50Improvements());
 
-        top50.print();
+        //top50.print();
 
         aqiStreamCurrentYear
                 .keyBy(AQIValue24h::getCity)

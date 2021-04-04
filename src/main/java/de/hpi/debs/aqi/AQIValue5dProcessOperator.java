@@ -1,6 +1,5 @@
 package de.hpi.debs.aqi;
 
-import de.hpi.debs.Event;
 import de.hpi.debs.slicing.AqiWindowState;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
@@ -54,7 +53,8 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
     }
 
     @Override
-    public void open() {
+    public void open() throws Exception {
+        super.open();
         state = getRuntimeContext().getState(new ValueStateDescriptor<>("state", AqiWindowState.class));
     }
 

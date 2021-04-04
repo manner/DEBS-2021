@@ -6,7 +6,7 @@ public class AQIValue5d {
     private final double aqi;
     private final int curAqiP1;
     private final int curAqiP2;
-    private final long timestamp;
+    private long timestamp;
     private final boolean watermark;
     private final String city;
 
@@ -42,6 +42,10 @@ public class AQIValue5d {
 
     public long getTimestamp() {
         return timestamp;
+    }
+
+    public void offsetTimestamp(long ts) {
+        timestamp += ts;
     }
 
     public boolean isWatermark() {

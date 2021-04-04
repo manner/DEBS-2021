@@ -9,7 +9,6 @@ import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.util.Collector;
 
-import de.hpi.debs.aqi.LongestStreakProcessor;
 import de.hpi.debs.aqi.Streak;
 import de.tum.i13.bandency.ResultQ2;
 import de.tum.i13.bandency.TopKStreaks;
@@ -64,7 +63,7 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
                 .setBatchSeqId(seqCounter++) // TODO: FIX THIS!
                 .setBenchmarkId(benchmarkId)
                 .build();
-        Main.challengeClient.resultQ2(result);
+        System.out.println(Main.challengeClient.resultQ2(result));
         streaks.clear();
     }
 
@@ -87,7 +86,7 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
         int totalStreaks = streaksPerBucket.values().stream().mapToInt(Integer::intValue).sum();
 
         List<TopKStreaks> topKStreaks = new ArrayList<>(14);
-        System.out.println("Batch: " + watermarkTimestamp);
+        //System.out.println("Batch: " + watermarkTimestamp);
         for (int i = 0; i < 14; i++) {
             Integer numberOfStreaks = streaksPerBucket.get(i);
             int percent;
@@ -96,7 +95,7 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
             } else {
                 percent = Math.round((float) numberOfStreaks / totalStreaks * 1000);
             }
-            System.out.println(i + ":" + " from: " + i * bucketSize + " to: " + (i + 1) * bucketSize + " percent: " + percent);
+            //System.out.println(i + ":" + " from: " + i * bucketSize + " to: " + (i + 1) * bucketSize + " percent: " + percent);
             TopKStreaks streak = TopKStreaks.newBuilder()
                     .setBucketFrom(i * bucketSize)
                     .setBucketTo((i + 1) * bucketSize)

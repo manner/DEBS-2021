@@ -56,7 +56,8 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
     }
 
     @Override
-    public void open() {
+    public void open() throws Exception {
+        super.open();
         state = getRuntimeContext().getState(new ValueStateDescriptor<>("state", ParticleWindowState.class));
     }
 
