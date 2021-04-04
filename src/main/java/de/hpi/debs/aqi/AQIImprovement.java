@@ -51,12 +51,23 @@ public class AQIImprovement implements Comparable<AQIImprovement> {
         this.city = city;
     }
 
+    public int getCurAqiP1() {
+        return curAqiP1;
+    }
+
+    public int getCurAqiP2() {
+        return curAqiP2;
+    }
+
     @Override
     public String toString() {
         return "AQIImprovement{" +
                 "improvement=" + improvement +
-                ", timestamp=" + new Date(timestamp).toString() +
-                ", city=" + city +
+                ", curAqiP1=" + curAqiP1 +
+                ", curAqiP2=" + curAqiP2 +
+                ", timestamp=" + new Date(timestamp).toGMTString() +
+                ", city='" + city + '\'' +
+                ", isWatermark=" + isWatermark +
                 '}';
     }
 
