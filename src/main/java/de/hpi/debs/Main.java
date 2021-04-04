@@ -51,8 +51,11 @@ public class Main {
                 .setBenchmarkType("test") // Benchmark Type for testing
                 .build();
 
+        long CHECKPOINTING_INTERVAL = Long.parseLong(System.getenv("CHECKPOINTING_INTERVAL"));
+
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(4); // sets the number of parallel for each instance
+        env.enableCheckpointing(CHECKPOINTING_INTERVAL);
 
         // Create a new Benchmark
         Benchmark newBenchmark = challengeClient.createNewBenchmark(bc);
@@ -133,7 +136,5 @@ public class Main {
         System.out.println(challengeClient.endBenchmark(newBenchmark));
         System.out.println("ended Benchmark");
     }
-
-
 }
 
