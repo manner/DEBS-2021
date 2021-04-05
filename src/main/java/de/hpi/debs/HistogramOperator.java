@@ -63,7 +63,7 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
                 .setBatchSeqId(seqCounter++) // TODO: FIX THIS!
                 .setBenchmarkId(benchmarkId)
                 .build();
-        System.out.println(Main.challengeClient.resultQ2(result));
+        //System.out.println(Main.challengeClient.resultQ2(result));
         streaks.clear();
     }
 

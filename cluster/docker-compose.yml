@@ -1,11 +1,13 @@
-version: '3.8'
+version: "3.8"
 services:
   jobmanager:
     image: flink:scala_2.12-java11
     container_name: jobmanager
     command: /docker-entrypoint.sh jobmanager
     environment:
-      - 'FLINK_PROPERTIES=jobmanager.rpc.address: jobmanager'
+      - "FLINK_PROPERTIES=jobmanager.rpc.address: jobmanager"
+      - "EBS_API_KEY=kfhlzrortvxxgywlghvtmmohhagkfzkv"
+      - "CHECKPOINTING_INTERVAL=300000"
     networks:
       - flink-network
     ports:
@@ -16,6 +18,8 @@ services:
     command: /docker-entrypoint.sh taskmanager
     environment:
       - "FLINK_PROPERTIES=jobmanager.rpc.address: jobmanager"
+      - "EBS_API_KEY=kfhlzrortvxxgywlghvtmmohhagkfzkv"
+      - "CHECKPOINTING_INTERVAL=300000"
     depends_on:
       - "jobmanager"
     networks:

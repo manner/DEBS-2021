@@ -85,7 +85,7 @@ public class LongestStreakProcessorTests {
                 }},
                 16000));
     }};
-
+/*
     @Test
     public void initialManyBatchesInFirst5MinutesTest() throws Exception {
         LongestStreakProcessorTestClass operator = new LongestStreakProcessorTestClass();
@@ -125,7 +125,7 @@ public class LongestStreakProcessorTests {
 
         testHarness.close();
     }
-/*
+
     // next test
     protected ArrayList<StreamRecord<AQIValue24h>> events2 = new ArrayList<>() {{
         add(new StreamRecord<>(new AQIValue24h(1, 2, 4, 8000, true, "Poland"), 8000));

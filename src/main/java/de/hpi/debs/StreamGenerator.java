@@ -1,15 +1,14 @@
 package de.hpi.debs;
 
-import akka.io.SelectionHandlerSettings;
+import de.hpi.debs.serializer.LocationSerializer;
+import de.tum.i13.bandency.*;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
-import de.hpi.debs.serializer.BatchSerializer;
-import de.tum.i13.bandency.Batch;
-import de.tum.i13.bandency.Benchmark;
-import de.tum.i13.bandency.Measurement;
-
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +16,8 @@ import java.util.Optional;
 
 public class StreamGenerator implements SourceFunction<MeasurementOwn> {
 
+    private static LocationRetriever locationRetriever;
+    private static ChallengerGrpc.ChallengerBlockingStub challengeClient;
     private static final long A_YEAR = Time.days(365).toMilliseconds();
     private volatile boolean running = true;
     private int cnt = 0;
@@ -34,6 +35,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
         batchNumbers = batchNumbersIn;
         cities = new HashMap<>();
         lastYearCities = new HashMap<>();
+        //System.out.println(locations);
     }
 
     public void processBatch(SourceContext<MeasurementOwn> context, Batch batch) {
@@ -56,7 +58,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
         Optional<String> optionalCity;
 
         for (Measurement measurement : currentYearList) {
-            optionalCity = Main.locationRetriever.findCityForMeasurement(measurement);
+            optionalCity = locationRetriever.findCityForMeasurement(measurement);
             optionalCity.ifPresent(city -> {
                 MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, city);
 
@@ -71,7 +73,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
         }
 
         for (Measurement measurement : lastYearList) {
-            optionalCity = Main.locationRetriever.findCityForMeasurement(measurement);
+            optionalCity = locationRetriever.findCityForMeasurement(measurement);
             optionalCity.ifPresent(city -> {
                 MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, city);
 
@@ -126,10 +128,23 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
     }
 
     @Override
-    public void run(SourceContext<MeasurementOwn> context) {
+    public void run(SourceContext<MeasurementOwn> context) throws IOException {
+
+        ManagedChannel channel = ManagedChannelBuilder
+                .forAddress("challenge.msrg.in.tum.de", 5023)
+                .usePlaintext()
+                .build();
+
+        challengeClient = ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
+                .withMaxInboundMessageSize(100 * 1024 * 1024)
+                .withMaxOutboundMessageSize(100 * 1024 * 1024);
+
+        // Get the locations
+        Locations locations = LocationSerializer.getLocations(challengeClient, benchmark);
+        locationRetriever = new LocationRetriever(locations);
 
         while (running) {
-            Batch batch = Main.challengeClient.nextBatch(benchmark);
+            Batch batch =  challengeClient.nextBatch(benchmark);
 //            Batch batch = BatchSerializer.getBatch(Main.challengeClient, benchmark, cnt);
 
             processBatch(context, batch);

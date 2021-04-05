@@ -39,8 +39,8 @@ public class AQICalculatorTests {
         assertEquals(500, AQICalculator.getAQI25(500.4f));
         assertEquals(500, AQICalculator.getAQI10(604f));
 
-        assertEquals(500, AQICalculator.getAQI25(1000f));
-        assertEquals(500, AQICalculator.getAQI10(1000f));
+        assertEquals(999, AQICalculator.getAQI25(100000000000f));
+        assertEquals(999, AQICalculator.getAQI10(100000000000f));
 
     }
 }

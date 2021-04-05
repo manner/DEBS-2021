@@ -1,19 +1,30 @@
 buildscript {
+    repositories {
+        jcenter() // this applies only to the Gradle 'Shadow' plugin
+    }
     dependencies {
         classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
     }
 }
 
 plugins {
+    id 'java'
+    id 'application'
+    id 'com.google.protobuf' version '0.8.15'
+    // shadow plugin to produce fat JARs
     id 'com.github.johnrengelman.shadow' version '6.1.0'
-    id "java"
-    id "application"
-    id "com.google.protobuf" version "0.8.15"
-    id "idea"
 }
 
-group "de.hpi.debs"
-version "1.0-SNAPSHOT"
+apply plugin: 'application'
+apply plugin: 'java'
+apply plugin: 'com.google.protobuf'
+
+group 'de.hpi.debs'
+version '1.0-SNAPSHOT'
+
+String geoToolsVersion = '26-SNAPSHOT'
+
+applicationDefaultJvmArgs = ["-Dlog4j.configurationFile=log4j2.properties"]
 
 repositories {
     maven {
@@ -28,21 +39,13 @@ repositories {
     maven { url "https://maven-central.storage-download.googleapis.com/maven2/" }
 }
 
-apply plugin: 'com.github.johnrengelman.shadow'
-apply plugin : "java"
-apply plugin : "com.google.protobuf"
-
-application.mainClass.set("de.hpi.debs.Main")
-
-String geoToolsVersion = "26-SNAPSHOT"
-
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:3.12.0"
+        artifact = 'com.google.protobuf:protoc:3.12.0'
     }
     plugins {
         grpc {
-            artifact = "io.grpc:protoc-gen-grpc-java:1.33.1"
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.36.0'
         }
     }
     generateProtoTasks {
@@ -52,31 +55,18 @@ protobuf {
     }
 }
 
-sourceSets {
-    main {
-        java {
-            srcDirs "build/generated/source/proto/main/grpc"
-            srcDirs "build/generated/source/proto/main/java"
-        }
-        proto.srcDirs "src/main/proto"
-    }
-}
-
-setMainClassName('de.hpi.debs.Main')
-
+// NOTE: We cannot use "compileOnly" or "shadow" configurations since then we could not run code
+// in the IDE or with "gradle run". We also cannot exclude transitive dependencies from the
+// shadowJar yet (see https://github.com/johnrengelman/shadow/issues/159).
+// -> Explicitly define the // libraries we want to be included in the "flinkShadowJar" configuration!
 configurations {
     flinkShadowJar // dependencies which go into the shadowJar
 
-    // provided by Flink
-    flinkShadowJar.exclude group: 'org.apache.flink', module: 'force-shading'
-    flinkShadowJar.exclude group: 'com.google.code.findbugs', module: 'jsr305'
-    flinkShadowJar.exclude group: 'org.slf4j'
-    flinkShadowJar.exclude group: 'log4j'
-
-    // already provided dependencies from serializer frameworks
-    flinkShadowJar.exclude group: 'com.esotericsoftware.kryo', module: 'kryo'
-    flinkShadowJar.exclude group: 'javax.servlet', module: 'servlet-api'
-    flinkShadowJar.exclude group: 'org.apache.httpcomponents', module: 'httpclient'
+    // always exclude these (also from transitive dependencies) since they are provided by Flink
+    linkShadowJar.exclude group: 'org.apache.flink', module: 'force-shading'
+    linkShadowJar.exclude group: 'com.google.code.findbugs', module: 'jsr305'
+    linkShadowJar.exclude group: 'org.slf4j'
+    linkShadowJar.exclude group: 'org.apache.logging.log4j'
 }
 
 dependencies {
@@ -88,19 +78,55 @@ dependencies {
     testImplementation group: 'org.apache.flink', name: 'flink-streaming-java_2.12', version: '1.12.1'
     testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine'
 
-    implementation group: 'org.jetbrains', name: 'annotations', version: '20.1.0'
-    implementation group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.36.0'
-    implementation group: 'io.grpc', name: 'grpc-protobuf', version: '1.36.0'
-    implementation group: 'io.grpc', name: 'grpc-stub', version: '1.36.0'
-    implementation group: 'org.apache.flink', name: 'flink-core', version: '1.12.1'
-    implementation group: 'org.apache.flink', name: 'flink-clients_2.12', version: '1.12.1'
-    implementation group: 'org.apache.flink', name: 'flink-streaming-java_2.12', version: '1.12.1'
-    implementation group: 'org.apache.flink', name: 'flink-connector-files', version: '1.12.1'
-    implementation group: 'org.geotools', name: 'gt-shapefile', version: geoToolsVersion
-    implementation group: 'org.geotools', name: 'gt-swing', version: geoToolsVersion
-    implementation group: 'org.slf4j', name: 'slf4j-nop',  version: '1.7.25'
+    flinkShadowJar group: 'org.geotools', name: 'gt-shapefile', version: geoToolsVersion
+    flinkShadowJar group: 'org.geotools', name: 'gt-swing', version: geoToolsVersion
+    flinkShadowJar group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.36.0'
+    flinkShadowJar group: 'io.grpc', name: 'grpc-protobuf', version: '1.36.0'
+    flinkShadowJar group: 'io.grpc', name: 'grpc-stub', version: '1.36.0'
 
-    compileOnly group: 'org.apache.tomcat', name: 'annotations-api', version: '6.0.53' // grpc needs that, necessary for Java 9+
+    compile group: 'org.geotools', name: 'gt-shapefile', version: geoToolsVersion
+    compile group: 'org.geotools', name: 'gt-swing', version: geoToolsVersion
+    compile group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.36.0'
+    compile group: 'io.grpc', name: 'grpc-protobuf', version: '1.36.0'
+    compile group: 'io.grpc', name: 'grpc-stub', version: '1.36.0'
+    compile group: 'org.jetbrains', name: 'annotations', version: '20.1.0'
+    compile group: 'org.apache.flink', name: 'flink-core', version: '1.12.2'
+    compile group: 'org.apache.flink', name: 'flink-clients_2.12', version: '1.12.2'
+    compile group: 'org.apache.flink', name: 'flink-streaming-java_2.12', version: '1.12.2'
+    compile group: 'org.apache.flink', name: 'flink-connector-files', version: '1.12.2'
+    compile group: 'org.slf4j', name: 'slf4j-nop', version: '1.7.25'
+
+    compile group: 'org.apache.tomcat', name: 'annotations-api', version: '6.0.53' // grpc needs that, necessary for Java 9+
+}
+
+sourceSets {
+    main.java.srcDirs += 'build/generated/source/proto/main/grpc'
+    main.java.srcDirs += 'build/generated/source/proto/main/java'
+    main.proto.srcDirs += 'src/main/proto'
+
+    main.compileClasspath += configurations.flinkShadowJar
+    main.runtimeClasspath += configurations.flinkShadowJar
+
+    test.compileClasspath += configurations.flinkShadowJar
+    test.runtimeClasspath += configurations.flinkShadowJar
+
+    javadoc.classpath += configurations.flinkShadowJar
+}
+
+run.classpath = sourceSets.main.runtimeClasspath
+
+jar {
+    manifest {
+        attributes 'Built-By': System.getProperty('user.name'),
+                'Build-Jdk': System.getProperty('java.version')
+    }
+}
+
+shadowJar {
+    mainClassName = 'de.hpi.debs.Main'
+
+    configurations = [project.configurations.flinkShadowJar] // runnable with flink run
+    //configurations = [project.configurations.compile] // runnable with java -jar
 }
 
 test {

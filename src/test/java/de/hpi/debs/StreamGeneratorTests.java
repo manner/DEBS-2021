@@ -158,26 +158,7 @@ public class StreamGeneratorTests {
     }};
 
     @Test
-    public void generalTest() throws IOException {
-        ManagedChannel channel = ManagedChannelBuilder
-                .forAddress("challenge.msrg.in.tum.de", 5023)
-                .usePlaintext()
-                .build();
-        Main.challengeClient = ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
-                .withMaxInboundMessageSize(100 * 1024 * 1024)
-                .withMaxOutboundMessageSize(100 * 1024 * 1024);
-        BenchmarkConfiguration bc = BenchmarkConfiguration.newBuilder()
-                .setBenchmarkName("Testrun " + new Date().toString())
-                .setBatchSize(1000)
-                .addQueries(BenchmarkConfiguration.Query.Q1)
-                .addQueries(BenchmarkConfiguration.Query.Q2)
-                .setToken(System.getenv("DEBS_API_KEY")) // go to: https://challenge.msrg.in.tum.de/profile/
-                .setBenchmarkType("test") // Benchmark Type for testing
-                .build();
-        Benchmark newBenchmark = Main.challengeClient.createNewBenchmark(bc);
-        Locations locations = LocationSerializer.getLocations(Main.challengeClient, newBenchmark);
-        Main.locationRetriever = new LocationRetriever(locations);
-
+    public void generalTest() {
         StreamGeneratorTestClass source = new StreamGeneratorTestClass(0);
         SourceFunctionMocker<MeasurementOwn> testContext = new SourceFunctionMocker<>();
         ArrayList<StreamRecord<MeasurementOwn>> groundTruth = new ArrayList<>();

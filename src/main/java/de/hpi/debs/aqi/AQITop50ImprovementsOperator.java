@@ -79,7 +79,7 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
                 .setBatchSeqId(seqCounter++) // TODO: FIX THIS!
                 .setBenchmarkId(benchmarkId)
                 .build();
-        Main.challengeClient.resultQ1(result);
+        //Main.challengeClient.resultQ1(result);
         improvementsState.clear();
     }
 

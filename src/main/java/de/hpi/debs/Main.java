@@ -13,20 +13,15 @@ import de.hpi.debs.aqi.AQIValue24hProcessOperator;
 import de.hpi.debs.aqi.AQIValue5d;
 import de.hpi.debs.aqi.AQIValue5dProcessOperator;
 import de.hpi.debs.aqi.LongestStreakProcessor;
-import de.hpi.debs.serializer.LocationSerializer;
 import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.BenchmarkConfiguration;
 import de.tum.i13.bandency.ChallengerGrpc;
-import de.tum.i13.bandency.Locations;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
 import java.util.Date;
 
 public class Main {
-
-    public static ChallengerGrpc.ChallengerBlockingStub challengeClient;
-    public static LocationRetriever locationRetriever;
 
     public static void main(String[] args) throws Exception {
 
@@ -38,7 +33,7 @@ public class Main {
                 .usePlaintext()
                 .build();
 
-        challengeClient = ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
+        ChallengerGrpc.ChallengerBlockingStub challengeClient = ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
                 .withMaxInboundMessageSize(100 * 1024 * 1024)
                 .withMaxOutboundMessageSize(100 * 1024 * 1024);
 
@@ -55,15 +50,10 @@ public class Main {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(4); // sets the number of parallel for each instance
-        env.enableCheckpointing(CHECKPOINTING_INTERVAL);
+        //env.enableCheckpointing(CHECKPOINTING_INTERVAL);
 
         // Create a new Benchmark
         Benchmark newBenchmark = challengeClient.createNewBenchmark(bc);
-
-        // Get the locations
-        Locations locations = LocationSerializer.getLocations(challengeClient, newBenchmark);
-        locationRetriever = new LocationRetriever(locations);
-        //System.out.println(locations);
 
         DataStream<MeasurementOwn> cities = env.addSource(new StreamGenerator(newBenchmark, 3));
 

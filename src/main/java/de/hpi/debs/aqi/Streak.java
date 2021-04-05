@@ -1,6 +1,5 @@
 package de.hpi.debs.aqi;
 
-
 import org.apache.flink.api.common.time.Time;
 
 import java.io.Serializable;
