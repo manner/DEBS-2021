@@ -1,11 +1,18 @@
+buildscript {
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:6.1.0'
+    }
+}
+
 plugins {
+    id 'com.github.johnrengelman.shadow' version '6.1.0'
     id "java"
     id "application"
     id "com.google.protobuf" version "0.8.15"
     id "idea"
 }
 
-group "de.hpi.debs.des"
+group "de.hpi.debs"
 version "1.0-SNAPSHOT"
 
 repositories {
@@ -21,6 +28,7 @@ repositories {
     maven { url "https://maven-central.storage-download.googleapis.com/maven2/" }
 }
 
+apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin : "java"
 apply plugin : "com.google.protobuf"
 
@@ -54,8 +62,24 @@ sourceSets {
     }
 }
 
+setMainClassName('de.hpi.debs.Main')
+
+configurations {
+    flinkShadowJar // dependencies which go into the shadowJar
+
+    // provided by Flink
+    flinkShadowJar.exclude group: 'org.apache.flink', module: 'force-shading'
+    flinkShadowJar.exclude group: 'com.google.code.findbugs', module: 'jsr305'
+    flinkShadowJar.exclude group: 'org.slf4j'
+    flinkShadowJar.exclude group: 'log4j'
+
+    // already provided dependencies from serializer frameworks
+    flinkShadowJar.exclude group: 'com.esotericsoftware.kryo', module: 'kryo'
+    flinkShadowJar.exclude group: 'javax.servlet', module: 'servlet-api'
+    flinkShadowJar.exclude group: 'org.apache.httpcomponents', module: 'httpclient'
+}
+
 dependencies {
-    implementation group: 'org.jetbrains', name: 'annotations', version: '20.1.0'
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.7.1'
     testImplementation group: 'junit', name: 'junit', version: '4.13.1'
     testImplementation group: 'org.apache.flink', name: 'flink-test-utils_2.11', version: '1.12.1'
@@ -64,6 +88,7 @@ dependencies {
     testImplementation group: 'org.apache.flink', name: 'flink-streaming-java_2.12', version: '1.12.1'
     testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine'
 
+    implementation group: 'org.jetbrains', name: 'annotations', version: '20.1.0'
     implementation group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.36.0'
     implementation group: 'io.grpc', name: 'grpc-protobuf', version: '1.36.0'
     implementation group: 'io.grpc', name: 'grpc-stub', version: '1.36.0'
