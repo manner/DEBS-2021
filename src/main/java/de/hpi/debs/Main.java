@@ -119,7 +119,8 @@ public class Main {
                         "top50cities",
                         TypeInformation.of(Void.class),
                         new AQITop50ImprovementsOperator(newBenchmark.getId())
-                );
+                ).setParallelism(1);
+
 
         aqiStreamCurrentYear
                 .keyBy(AQIValue24h::getCity)
@@ -128,7 +129,7 @@ public class Main {
                         "histogram",
                         TypeInformation.of(Void.class),
                         new HistogramOperator(newBenchmark.getId())
-                );
+                ).setParallelism(1);
 
         //Start the benchmark
         System.out.println(challengeClient.startBenchmark(newBenchmark));
