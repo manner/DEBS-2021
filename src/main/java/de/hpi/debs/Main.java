@@ -6,7 +6,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
 import de.hpi.debs.aqi.AQIImprovement;
-import de.hpi.debs.aqi.AQIImprovementProcessorOperator;
+import de.hpi.debs.aqi.AQIImprovementProcessor;
 import de.hpi.debs.aqi.AQITop50ImprovementsOperator;
 import de.hpi.debs.aqi.AQIValue24h;
 import de.hpi.debs.aqi.AQIValue24hProcessOperator;
@@ -91,7 +91,7 @@ public class Main {
                 .transform(
                         "AQIValue5dProcessOperator",
                         TypeInformation.of(AQIValue5d.class),
-                        new AQIValue5dProcessOperator(currentStart)
+                        new AQIValue5dProcessOperator(currentStart, false)
                 );
 
         DataStream<AQIValue5d> fiveDayStreamLastYear = aqiStreamLastYear // need more attributes
@@ -99,18 +99,14 @@ public class Main {
                 .transform(
                         "AQIValue5dProcessOperator",
                         TypeInformation.of(AQIValue5d.class),
-                        new AQIValue5dProcessOperator(lastStart)
+                        new AQIValue5dProcessOperator(lastStart, true)
                 );
 
         DataStream<AQIImprovement> fiveDayImprovement = fiveDayStreamCurrentYear
                 .keyBy(AQIValue5d::getCity)
-                .connect(fiveDayStreamLastYear.keyBy(AQIValue5d::getCity))
-                .keyBy(AQIValue5d::getCity, AQIValue5d::getCity)
-                .transform(
-                        "OurJoinOperator",
-                        TypeInformation.of(AQIImprovement.class),
-                        new AQIImprovementProcessorOperator()
-                );
+                .intervalJoin(fiveDayStreamLastYear.keyBy(AQIValue5d::getCity))
+                .between(Time.milliseconds(0), Time.milliseconds(0))
+                .process(new AQIImprovementProcessor());
 
         fiveDayImprovement.print();
 

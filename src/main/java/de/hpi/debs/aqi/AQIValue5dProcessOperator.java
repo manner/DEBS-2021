@@ -3,6 +3,7 @@ package de.hpi.debs.aqi;
 import de.hpi.debs.slicing.AqiWindowState;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
+import org.apache.flink.api.common.time.Time;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.operators.KeyedProcessOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
@@ -17,8 +18,9 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
     public long step;
     public long doubleStep;
     public int vDeltaIdx;
+    boolean addOneYear;
 
-    public AQIValue5dProcessOperator(long start) {
+    public AQIValue5dProcessOperator(long start, boolean addOneYear) {
         super(
             new KeyedProcessFunction<>() {
                 @Override
@@ -28,6 +30,7 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
             }
         );
 
+        this.addOneYear = addOneYear;
         this.start = start;
         this.size = 432000000;
         this.step = 300000;
@@ -66,7 +69,7 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
         if (value.getValue().isWatermark()) { // emit results on watermark arrival
             if (state.value() == null) { // in case no records are processed beforehand watermark has all values
 
-                output.collect(new StreamRecord<>(new AQIValue5d(value.getValue()), value.getTimestamp()));
+                output.collect(new StreamRecord<>(new AQIValue5d(value.getValue()), value.getTimestamp() + (addOneYear ? Time.days(365).toMilliseconds() : 0)));
                 return;
             }
 
@@ -119,7 +122,7 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
                             curWindowEnd,
                             false,
                             (String) getCurrentKey()),
-                            curWindowEnd
+                            curWindowEnd + (addOneYear ? Time.days(365).toMilliseconds() : 0)
                     ));
                 }
 
@@ -139,7 +142,7 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
                     wm,
                     true,
                     value.getValue().getCity()),
-                    wm
+                    wm + (addOneYear ? Time.days(365).toMilliseconds() : 0)
             ));
 
             // remove slices that are already emitted and disjoint with all remaining windows that will be emitted
