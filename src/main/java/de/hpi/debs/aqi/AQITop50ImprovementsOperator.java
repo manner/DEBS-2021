@@ -91,7 +91,7 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
                 .withMaxInboundMessageSize(100 * 1024 * 1024)
                 .withMaxOutboundMessageSize(100 * 1024 * 1024)
                 .resultQ1(result);
-
+        channel.shutdownNow();
         improvementsState.clear();
     }
 
