@@ -1,6 +1,5 @@
 package de.hpi.debs;
 
-import de.hpi.debs.serializer.LocationSerializer;
 import de.tum.i13.bandency.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
