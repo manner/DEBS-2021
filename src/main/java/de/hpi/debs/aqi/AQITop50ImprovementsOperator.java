@@ -8,9 +8,11 @@ import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.util.Collector;
 
-import de.hpi.debs.Main;
+import de.tum.i13.bandency.ChallengerGrpc;
 import de.tum.i13.bandency.ResultQ1;
 import de.tum.i13.bandency.TopKCities;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -79,7 +81,17 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
                 .setBatchSeqId(seqCounter++) // TODO: FIX THIS!
                 .setBenchmarkId(benchmarkId)
                 .build();
-        //Main.challengeClient.resultQ1(result);
+
+        ManagedChannel channel = ManagedChannelBuilder
+                .forAddress("challenge.msrg.in.tum.de", 5023)
+                .usePlaintext()
+                .build();
+
+        ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
+                .withMaxInboundMessageSize(100 * 1024 * 1024)
+                .withMaxOutboundMessageSize(100 * 1024 * 1024)
+                .resultQ1(result);
+
         improvementsState.clear();
     }
 

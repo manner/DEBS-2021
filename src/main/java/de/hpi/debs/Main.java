@@ -102,8 +102,6 @@ public class Main {
                 .between(Time.milliseconds(0), Time.milliseconds(0))
                 .process(new AQIImprovementProcessor());
 
-        fiveDayImprovement.print();
-
         fiveDayImprovement
                 .transform(
                         "top50cities",
