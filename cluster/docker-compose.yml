@@ -6,7 +6,6 @@ services:
     command: /docker-entrypoint.sh jobmanager
     environment:
       - "FLINK_PROPERTIES=jobmanager.rpc.address: jobmanager"
-      - "EBS_API_KEY=kfhlzrortvxxgywlghvtmmohhagkfzkv"
       - "CHECKPOINTING_INTERVAL=300000"
     networks:
       - flink-network
@@ -17,8 +16,7 @@ services:
     image: flink:scala_2.12-java11
     command: /docker-entrypoint.sh taskmanager
     environment:
-      - "FLINK_PROPERTIES=jobmanager.rpc.address: jobmanager\ntaskmanager.memory.flink.size: 10g\ntaskmanager.memory.process.size: 14g\ntaskmanager.memory.jvm-overhead.max: 14g"
-      - "EBS_API_KEY=kfhlzrortvxxgywlghvtmmohhagkfzkv"
+      - "FLINK_PROPERTIES=jobmanager.rpc.address: jobmanager"
       - "CHECKPOINTING_INTERVAL=300000"
     depends_on:
       - "jobmanager"
