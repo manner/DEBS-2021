@@ -37,19 +37,23 @@ public class Main {
                 .withMaxInboundMessageSize(100 * 1024 * 1024)
                 .withMaxOutboundMessageSize(100 * 1024 * 1024);
 
+        int BATCH_SIZE = Integer.parseInt(System.getenv("BATCH_SIZE"));
+        String BENCHMARK_TYPE = System.getenv("BENCHMARK_TYPE");
+        String BENCHMARK_NAME_PREFIX = System.getenv("BENCHMARK_NAME_PREFIX");
         BenchmarkConfiguration bc = BenchmarkConfiguration.newBuilder()
-                .setBenchmarkName("Testrun " + new Date().toString())
-                .setBatchSize(1000)
+                .setBenchmarkName(System.getenv("BENCHMARK_NAME_PREFIX") + new Date().toString())
+                .setBatchSize(BATCH_SIZE)
                 .addQueries(BenchmarkConfiguration.Query.Q1)
                 .addQueries(BenchmarkConfiguration.Query.Q2)
                 .setToken(System.getenv("DEBS_API_KEY")) // go to: https://challenge.msrg.in.tum.de/profile/
-                .setBenchmarkType("test") // Benchmark Type for testing
+                .setBenchmarkType(BENCHMARK_TYPE) // Benchmark Type for testing
                 .build();
 
-        long CHECKPOINTING_INTERVAL = Long.parseLong(System.getenv("CHECKPOINTING_INTERVAL"));
+        //long CHECKPOINTING_INTERVAL = Long.parseLong(System.getenv("CHECKPOINTING_INTERVAL"));
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(4); // sets the number of parallel for each instance
+        int PARALLELISM = Integer.parseInt(System.getenv("PARALLELISM"));
+        env.setParallelism(PARALLELISM); // sets the number of parallel for each instance
         //env.enableCheckpointing(CHECKPOINTING_INTERVAL);
 
         // Create a new Benchmark
