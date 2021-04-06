@@ -140,7 +140,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
                 .withMaxOutboundMessageSize(100 * 1024 * 1024);
 
         // Get the locations
-        Locations locations = LocationSerializer.getLocations(challengeClient, benchmark);
+        Locations locations = challengeClient.getLocations(benchmark);
         locationRetriever = new LocationRetriever(locations);
 
         while (running) {

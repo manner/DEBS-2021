@@ -10,8 +10,11 @@ import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.util.Collector;
 
 import de.hpi.debs.aqi.Streak;
+import de.tum.i13.bandency.ChallengerGrpc;
 import de.tum.i13.bandency.ResultQ2;
 import de.tum.i13.bandency.TopKStreaks;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -63,7 +66,17 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
                 .setBatchSeqId(seqCounter++) // TODO: FIX THIS!
                 .setBenchmarkId(benchmarkId)
                 .build();
-        //System.out.println(Main.challengeClient.resultQ2(result));
+
+        ManagedChannel channel = ManagedChannelBuilder
+                .forAddress("challenge.msrg.in.tum.de", 5023)
+                .usePlaintext()
+                .build();
+
+        ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
+                .withMaxInboundMessageSize(100 * 1024 * 1024)
+                .withMaxOutboundMessageSize(100 * 1024 * 1024)
+                .resultQ2(result);
+
         streaks.clear();
     }
 
