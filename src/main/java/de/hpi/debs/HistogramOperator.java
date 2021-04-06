@@ -76,6 +76,7 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
                 .withMaxInboundMessageSize(100 * 1024 * 1024)
                 .withMaxOutboundMessageSize(100 * 1024 * 1024)
                 .resultQ2(result);
+        channel.shutdownNow();
 
         streaks.clear();
     }
