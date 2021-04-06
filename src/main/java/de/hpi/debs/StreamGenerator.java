@@ -16,7 +16,6 @@ import java.util.Optional;
 public class StreamGenerator implements SourceFunction<MeasurementOwn> {
 
     private static LocationRetriever locationRetriever;
-    private static ChallengerGrpc.ChallengerBlockingStub challengeClient;
     private static final long A_YEAR = Time.days(365).toMilliseconds();
     private volatile boolean running = true;
     private int cnt = 0;
@@ -134,7 +133,8 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
                 .usePlaintext()
                 .build();
 
-        challengeClient = ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
+        //for demo, we show the blocking stub
+        ChallengerGrpc.ChallengerBlockingStub challengeClient = ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
                 .withMaxInboundMessageSize(100 * 1024 * 1024)
                 .withMaxOutboundMessageSize(100 * 1024 * 1024);
 
