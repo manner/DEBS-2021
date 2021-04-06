@@ -73,21 +73,23 @@ if [ -z "$DEBS_API_KEY" ]; then
   exit 1
 fi
 
+# all editable parameters
 debsApiKey="$DEBS_API_KEY"
 checkpointingInterval=300000
 parallelism=5;
 batchSize=10000
 benchmarkType="test"
 benchmarkNamePrefix="testrun "
-
 # ip of job manager
 mainIP="192.168.1.27"
-# get ip of machine
-curIP=$(hostname -I | cut -d' ' -f1)
-
 # cluster ports
 jobmanagerPort=10017
 ports="$jobmanagerPort 10018 10019 10020 10021" # last need to be client that runs jar
+
+# get ip of machine
+curIP=$(hostname -I | cut -d' ' -f1)
+
+# deployment
 if [ "$deploy" = "true" ] || [ "$hardDeploy" = "true" ]; then
   echo "Started to deploy to flink cluster"
   # deploy jar to cluster
