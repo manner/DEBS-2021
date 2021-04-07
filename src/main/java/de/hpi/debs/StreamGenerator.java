@@ -73,7 +73,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
         for (Measurement measurement : lastYearList) {
             optionalCity = locationRetriever.findCityForMeasurement(measurement);
             optionalCity.ifPresent(city -> {
-                MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, city);
+                MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, city, A_YEAR, true);
 
                 Long lastTimestamp = lastYearCities.get(city);
                 if (lastTimestamp == null) {
@@ -91,7 +91,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
 
             // check if city is active
             if (lastTimestampOfCity >= watermarkTimestamp - Time.minutes(10).toMilliseconds()) {
-                MeasurementOwn watermark = new MeasurementOwn(0, 0, 0, 0, watermarkTimestamp, city.getKey(), true);
+                MeasurementOwn watermark = new MeasurementOwn(0, 0, 0, 0, watermarkTimestamp, city.getKey(), true, false);
                 context.collectWithTimestamp(watermark, watermarkTimestamp);
             }
         }
@@ -102,7 +102,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
 
             // check if city is active
             if (lastTimestampOfCity >= watermarkTimestamp - A_YEAR - Time.minutes(10).toMilliseconds()) {
-                MeasurementOwn watermark = new MeasurementOwn(0, 0, 0, 0, watermarkTimestamp - 31536000000L, city.getKey(), true);
+                MeasurementOwn watermark = new MeasurementOwn(0, 0, 0, 0, watermarkTimestamp - 31536000000L, city.getKey(), true, true);
                 context.collectWithTimestamp(watermark, watermarkTimestamp - A_YEAR);
             }
         }

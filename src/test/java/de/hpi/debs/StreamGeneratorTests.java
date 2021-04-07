@@ -3,21 +3,12 @@ package de.hpi.debs;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 
 import com.google.protobuf.Timestamp;
-import de.hpi.debs.serializer.LocationSerializer;
 import de.hpi.debs.testHarness.SourceFunctionMocker;
 import de.tum.i13.bandency.Batch;
-import de.tum.i13.bandency.Benchmark;
-import de.tum.i13.bandency.BenchmarkConfiguration;
-import de.tum.i13.bandency.ChallengerGrpc;
-import de.tum.i13.bandency.Locations;
 import de.tum.i13.bandency.Measurement;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -182,6 +173,7 @@ public class StreamGeneratorTests {
                                     m.getLongitude(),
                                     timestamp,
                                     "Essen",
+                                    false,
                                     false);
 
                             groundTruth.add(new StreamRecord<>(essen, timestamp));
@@ -193,6 +185,7 @@ public class StreamGeneratorTests {
                                     m.getLongitude(),
                                     timestamp,
                                     "Berlin Moabit",
+                                    false,
                                     false);
 
                             groundTruth.add(new StreamRecord<>(berlin, timestamp));
