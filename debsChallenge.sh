@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # stop script on failure
 set -e
@@ -23,10 +23,13 @@ scriptName=$(basename -- "$0")
 deploy="false"
 hardDeploy="false"
 run="false"
-newJar="false"
+deployScripts="false"
+deployJar="false"
+stop="false"
 help="false"
 runInternal="false"
 internalHardDeploy="false"
+internalStop="false"
 while test $# -gt 0
 do
   case "$1" in
@@ -36,13 +39,19 @@ do
       ;;
     run) run="true"
       ;;
-    newJar) newJar="true"
+    deployScripts) deployScripts="true"
+      ;;
+    deployJar) deployJar="true"
+      ;;
+    stop) stop="true"
       ;;
     help) help="true"
       ;;
     runInternal) runInternal="true"
       ;;
     internalHardDeploy) internalHardDeploy="true"
+      ;;
+    internalStop) internalStop="true"
       ;;
   esac
   shift
@@ -58,13 +67,25 @@ if [ "$help" = "true" ]; then
   echo "  DEBS_API_KEY=<yourApiKeyHere> bash $scriptName [Options]";
   echo "";
   echo "Options:";
-  echo "  deploy     - Deploys the debs challenge pipeline to the cluster. Make";
-  echo "               sure that you build the jar with 'gradle shadowJar'.";
-  echo "  hardDeploy - Like 'deploy' but also stops all previous flink managers.";
-  echo "  run        - Runs the pipeline on the cluster.";
-  echo "  newJar     - Uploads jar again to the cluster.";
-  echo "  help       - Prints this help text.";
+  echo "  deploy         - Deploys the debs challenge pipeline to the cluster. Make";
+  echo "                   sure that you build the jar with 'gradle shadowJar'.";
+  echo "  hardDeploy     - Like 'deploy' but also stops all previous flink managers.";
+  echo "  run            - Runs the pipeline on the cluster.";
+  echo "  deployScripts  - Deploys this script and starts the flink cluster.";
+  echo "  deployJar      - Deploys jar to the cluster.";
+  echo "  stop           - Turns of the flink cluster.";
+  echo "  help           - Prints this help text.";
   exit 0
+fi
+
+if [ "$deploy" = "true" ]; then
+  deployScripts="true";
+  deployJar="true";
+fi
+
+if [ "$hardDeploy" = "true" ]; then
+  deployScripts="true";
+  deployJar="true";
 fi
 
 if [ -z "$DEBS_API_KEY" ]; then
@@ -89,39 +110,43 @@ ports="$jobmanagerPort 10018 10019 10020 10021" # last need to be client that ru
 # get ip of machine
 curIP=$(hostname -I | cut -d' ' -f1)
 
-# deployment
-if [ "$deploy" = "true" ] || [ "$hardDeploy" = "true" ]; then
-  echo "Started to deploy to flink cluster"
-  # deploy jar to cluster
-  if [ -f "$scriptDir/build/libs/DEBS-2021-1.0-SNAPSHOT-all.jar" ]; then
-    echo "Started to deploy jar to cluster"
-    scp -P $jobmanagerPort "$scriptDir/build/libs/DEBS-2021-1.0-SNAPSHOT-all.jar" "group-19@challenge.msrg.in.tum.de:DEBS-2021-1.0-SNAPSHOT-all.jar"
-  else
-    echo "Skipped deploying jar as it could not be fund under $scriptDir/build/libs/DEBS-2021-1.0-SNAPSHOT-all.jar"
-  fi
-  echo "Started to deploy start script to cluster"
+# scripts deployment
+if [ "$deployScripts" = "true" ] || [ "$stop" = "true" ]; then
+  echo "Started to setup cluster"
   for i in $ports; do
-    scp -P "$i" "$scriptPath" "group-19@challenge.msrg.in.tum.de:$scriptName";
     if [ "$hardDeploy" = "true" ]; then
-      ssh -p "$i" group-19@challenge.msrg.in.tum.de "DEBS_API_KEY=$debsApiKey screen -d -m bash $scriptName internalHardDeploy"
+      scp -P "$i" "$scriptPath" "group-19@challenge.msrg.in.tum.de:$scriptName";
+      if [ "$i" = "$jobmanagerPort" ]; then
+        ssh -p "$i" group-19@challenge.msrg.in.tum.de "DEBS_API_KEY=$debsApiKey screen -S jobmanager -d -m bash $scriptName internalHardDeploy"
+      else
+        ssh -p "$i" group-19@challenge.msrg.in.tum.de "DEBS_API_KEY=$debsApiKey screen -S taskmanager -d -m bash $scriptName internalHardDeploy"
+      fi
+    elif [ "$stop" = "true" ]; then
+      ssh -p "$i" group-19@challenge.msrg.in.tum.de "DEBS_API_KEY=$debsApiKey screen -S stop -d -m bash $scriptName internalStop"
     else
-      ssh -p "$i" group-19@challenge.msrg.in.tum.de "DEBS_API_KEY=$debsApiKey screen -d -m bash $scriptName"
+      scp -P "$i" "$scriptPath" "group-19@challenge.msrg.in.tum.de:$scriptName";
+      if [ "$i" = "$jobmanagerPort" ]; then
+        ssh -p "$i" group-19@challenge.msrg.in.tum.de "DEBS_API_KEY=$debsApiKey screen -S jobmanager -d -m bash $scriptName"
+      else
+        ssh -p "$i" group-19@challenge.msrg.in.tum.de "DEBS_API_KEY=$debsApiKey screen -S taskmanager -d -m bash $scriptName"
+      fi
     fi
   done;
-  if [ "$run" = "false" ] && [ "$newJar" = "false" ]; then
+  if [ "$run" = "false" ] && [ "$deployJar" = "false" ]; then
     echo "Finished"
     exit 0
   fi
 else
-  echo "Skipped deploying to cluster"
+  echo "Skipped setup of cluster"
 fi
 
-if [ "$newJar" = "true" ]; then
+if [ "$deployJar" = "true" ]; then
+  # deploy jar to cluster
   if [ ! -f "$scriptDir/build/libs/DEBS-2021-1.0-SNAPSHOT-all.jar" ]; then
     echo "Error: Executable $scriptDir/build/libs/DEBS-2021-1.0-SNAPSHOT-all.jar is missing!";
     exit 1
   else
-    echo "Started to upload new jar file"
+    echo "Started to deploy jar to cluster"
     scp -P $jobmanagerPort "$scriptDir/build/libs/DEBS-2021-1.0-SNAPSHOT-all.jar" "group-19@challenge.msrg.in.tum.de:DEBS-2021-1.0-SNAPSHOT-all.jar"
   fi
   if [ "$run" = "false" ]; then
@@ -129,15 +154,15 @@ if [ "$newJar" = "true" ]; then
     exit 0
   fi
 else
-  echo "Skipped uploading new jar file"
+  echo "Skipped deploying jar as it could not be fund under $scriptDir/build/libs/DEBS-2021-1.0-SNAPSHOT-all.jar"
 fi
 
 if [ "$run" = "true" ]; then
   echo "Started to run the debs pipeline";
-  ssh -p $jobmanagerPort group-19@challenge.msrg.in.tum.de "DEBS_API_KEY=$debsApiKey screen -d -m bash $scriptName runInternal";
+  ssh -p $jobmanagerPort group-19@challenge.msrg.in.tum.de "DEBS_API_KEY=$debsApiKey screen -S app -d -m bash $scriptName runInternal";
   echo "Login to the cluster with 'ssh -p $jobmanagerPort group-19@challenge.msrg.in.tum.de' and";
-  echo "then look with 'screen -ls' for the youngest screen and login with 'screen -r <screenTagHere>'.";
-  echo "To detach from the screen without stopping it press 'ctrl + a' and then 'd'."
+  echo "then look with 'screen -ls' for the youngest screen and login with 'screen -r app'. To";
+  echo "detach from the screen without stopping it press 'ctrl + a' and then 'd'."
   exit 0
 else
   echo "Skipped running debs pipeline"
@@ -151,9 +176,6 @@ cd "$HOME"
 echo "Started to set up environment variables"
 if [ -z "$DEBS_API_KEY" ]; then
   export DEBS_API_KEY="$debsApiKey"
-fi
-if [ -z "$FLINK_PROPERTIES" ]; then
-  export FLINK_PROPERTIES="jobmanager.rpc.address: $mainIP"
 fi
 if [ -z "$CHECKPOINTING_INTERVAL" ]; then
   export CHECKPOINTING_INTERVAL="$checkpointingInterval"
@@ -170,6 +192,15 @@ fi
 if [ -z "$BENCHMARK_NAME_PREFIX" ]; then
   export BENCHMARK_NAME_PREFIX="$benchmarkNamePrefix"
 fi
+if [ -z "$FLINK_PROPERTIES" ]; then
+  export FLINK_PROPERTIES="jobmanager.rpc.address: $mainIP
+jobmanager.rpc.port: 6123
+jobmanager.memory.process.size: 1600m
+taskmanager.memory.process.size: 1728m
+taskmanager.numberOfTaskSlots: 1
+parallelism.default: $parallelism
+jobmanager.execution.failover-strategy: region"
+fi
 
 # install java if missing
 if [ -z "$(which java)" ]; then
@@ -179,6 +210,17 @@ else
   echo "Skipped Java install"
 fi
 
+# setup flink environment
+if [ -z "$FLINK_HOME" ]; then
+  echo "Started to setup flink environment"
+  export FLINK_HOME="$HOME/flink-1.12.2"
+else
+  echo "Skipped flink environment setup"
+fi
+
+CONF_FILE="${FLINK_HOME}/conf/flink-conf.yaml"
+CONF_FILE_BACKUP="${FLINK_HOME}/conf/flink-conf.yaml_backup"
+
 # install flink
 if [ ! -f flink-1.12.2/bin/flink ]; then
   echo "Started to install flink"
@@ -187,16 +229,9 @@ if [ ! -f flink-1.12.2/bin/flink ]; then
   fi
 
   tar zxvf flink.tgz
+  cp "$CONF_FILE" "$CONF_FILE_BACKUP"
 else
   echo "Skipped flink install"
-fi
-
-# setup flink environment
-if [ -z "$FLINK_HOME" ]; then
-  echo "Started to setup flink environment"
-  export FLINK_HOME="$HOME/flink-1.12.2"
-else
-  echo "Skipped flink environment setup"
 fi
 
 if [ "$runInternal" = "true" ]; then
@@ -208,25 +243,50 @@ else
   echo "Skipped running debs pipeline"
 fi
 
-# stop previous flink managers and start new flink managers if not running
-echo "Started to start flink managers on flink cluster"
-if [ "$internalHardDeploy" = "true" ]; then
-  bash "$FLINK_HOME/bin/taskmanager.sh" stop-all;
-  bash "$FLINK_HOME/bin/jobmanager.sh" stop-all;
-  if [ "$mainIP" = "$curIP" ]; then
-    screen -d -m bash -c "$FLINK_HOME/bin/taskmanager.sh start-foreground"
-    bash -c "$FLINK_HOME/bin/jobmanager.sh start-foreground"
-  else
-    bash -c "$FLINK_HOME/bin/taskmanager.sh start-foreground"
+if [ "$internalStop" = "true" ]; then
+  echo "Started to stopp flink cluster"
+  "$FLINK_HOME"/bin/taskmanager.sh stop-all;
+  "$FLINK_HOME"/bin/jobmanager.sh stop-all;
+  if [ "$internalHardDeploy" = "false" ]; then
+    exit 0
   fi
+else
+  echo "Skipped stopping flink cluster"
 fi
+
+# stop previous flink managers and start new flink managers if not running
+if [ "$internalHardDeploy" = "true" ]; then
+  echo "Started to start flink managers on flink cluster"
+  # override flink properties if provided
+  "$FLINK_HOME"/bin/taskmanager.sh stop-all;
+  "$FLINK_HOME"/bin/jobmanager.sh stop-all;
+  if [ -n "${FLINK_PROPERTIES}" ]; then
+    echo "${FLINK_PROPERTIES}" > "${CONF_FILE}"
+  fi
+  # start flink managers
+  if [ "$mainIP" = "$curIP" ]; then
+    screen -S taskmanager -d -m "$FLINK_HOME"/bin/taskmanager.sh start-foreground
+    "$FLINK_HOME"/bin/jobmanager.sh start-foreground
+  else
+    "$FLINK_HOME"/bin/taskmanager.sh start-foreground
+  fi
+  exit 0
+else
+  echo "Skipped hard starting flink managers on flink cluster"
+fi
+
 # soft deploy
 if [ -z "$(top -n 1 -c -p "$(pgrep -d',' -f java)" | grep java)" ]; then
+  # override flink properties if provided
+  if [ -n "${FLINK_PROPERTIES}" ]; then
+    echo "${FLINK_PROPERTIES}" > "${CONF_FILE}"
+  fi
+  # start flink managers
   if [ "$mainIP" = "$curIP" ]; then
-    screen -d -m bash -c "$FLINK_HOME/bin/taskmanager.sh start-foreground"
-    bash -c "$FLINK_HOME/bin/jobmanager.sh start-foreground"
+    screen -S taskmanager -d -m "$FLINK_HOME"/bin/taskmanager.sh start-foreground
+    "$FLINK_HOME"/bin/jobmanager.sh start-foreground
   else
-    bash -c "$FLINK_HOME/bin/taskmanager.sh start-foreground"
+    "$FLINK_HOME"/bin/taskmanager.sh start-foreground
   fi
 else
   echo "Skipped starting flink managers on flink cluster"
