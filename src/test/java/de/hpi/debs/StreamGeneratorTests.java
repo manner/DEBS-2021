@@ -3,21 +3,13 @@ package de.hpi.debs;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 
 import com.google.protobuf.Timestamp;
-import de.hpi.debs.serializer.LocationSerializer;
 import de.hpi.debs.testHarness.SourceFunctionMocker;
 import de.tum.i13.bandency.Batch;
-import de.tum.i13.bandency.Benchmark;
-import de.tum.i13.bandency.BenchmarkConfiguration;
-import de.tum.i13.bandency.ChallengerGrpc;
-import de.tum.i13.bandency.Locations;
 import de.tum.i13.bandency.Measurement;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -28,7 +20,7 @@ public class StreamGeneratorTests {
     public static class StreamGeneratorTestClass extends StreamGenerator {
 
         public StreamGeneratorTestClass(
-                int batchNumbersIn) {
+                int batchNumbersIn) throws IOException {
             super(null, batchNumbersIn);
         }
     }
@@ -158,7 +150,7 @@ public class StreamGeneratorTests {
     }};
 
     @Test
-    public void generalTest() {
+    public void generalTest() throws IOException {
         StreamGeneratorTestClass source = new StreamGeneratorTestClass(0);
         SourceFunctionMocker<MeasurementOwn> testContext = new SourceFunctionMocker<>();
         ArrayList<StreamRecord<MeasurementOwn>> groundTruth = new ArrayList<>();
