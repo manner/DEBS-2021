@@ -49,6 +49,7 @@ protobuf {
         }
     }
     generateProtoTasks {
+        //noinspection GroovyAssignabilityCheck
         all()*.plugins {
             grpc {}
         }
