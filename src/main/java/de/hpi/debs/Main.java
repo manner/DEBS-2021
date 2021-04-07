@@ -1,5 +1,8 @@
 package de.hpi.debs;
 
+import de.hpi.debs.aqi.*;
+import de.tum.i13.bandency.*;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.AsyncDataStream;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -7,13 +10,11 @@ import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
 import com.twitter.chill.protobuf.ProtobufSerializer;
-import de.tum.i13.bandency.Batch;
-import de.tum.i13.bandency.Benchmark;
-import de.tum.i13.bandency.BenchmarkConfiguration;
-import de.tum.i13.bandency.ChallengerGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
+import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -21,8 +22,7 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
 
-        long currentStart = 1577833200000L;
-        long lastStart = currentStart - Time.days(365).toMilliseconds(); // 365 days before
+        long currentStart = LocalDateTime.of(2020, Month.JANUARY, 1, 0, 0).getNano() / 1000;
 
         ManagedChannel channel = ManagedChannelBuilder
                 .forAddress("challenge.msrg.in.tum.de", 5023)
@@ -44,6 +44,11 @@ public class Main {
                 .setBenchmarkType(BENCHMARK_TYPE) // Benchmark Type for testing
                 .build();
 
+        // Get the locations
+        Benchmark benchmark = challengeClient.createNewBenchmark(bc);
+        Locations locations = challengeClient.getLocations(benchmark);
+        LocationRetriever locationRetriever = new LocationRetriever(locations);
+
         //long CHECKPOINTING_INTERVAL = Long.parseLong(System.getenv("CHECKPOINTING_INTERVAL"));
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -59,6 +64,9 @@ public class Main {
         System.out.println(challengeClient.startBenchmark(newBenchmark));
 
         env.getConfig().registerTypeWithKryoSerializer(Batch.class, ProtobufSerializer.class);
+        env.getConfig().registerTypeWithKryoSerializer(Location.class, ProtobufSerializer.class);
+        env.getConfig().registerTypeWithKryoSerializer(Locations.class, ProtobufSerializer.class);
+        env.getConfig().registerTypeWithKryoSerializer(Measurement.class, ProtobufSerializer.class);
 
         DataStream<Batch> batches = AsyncDataStream.orderedWait(
                 env.fromSequence(0, 5),
@@ -69,10 +77,17 @@ public class Main {
         batches.print();
         DiscardingSink<Batch> sink =  new DiscardingSink<>();
         batches.addSink(sink);
+
+//        DataStream<MeasurementOwn> cities = batches
+//                .transform(
+//                        "batchProcessor",
+//                        TypeInformation.of(MeasurementOwn.class),
+//                        new BatchProcessor(locationRetriever)
+//                ).setParallelism(1);
 //        env.fromSequence(1, 10)
 //                AsyncDat
 //                        (new AsyncStreamGenerator(newBenchmark));
-
+//
 //        DataStream<MeasurementOwn> lastYearCities = cities.filter(MeasurementOwn::isLastYear);
 //        DataStream<MeasurementOwn> currentYearCities = cities.filter(MeasurementOwn::isCurrentYear);
 //
@@ -89,7 +104,7 @@ public class Main {
 //                .transform(
 //                        "AQIValue24hProcessOperator",
 //                        TypeInformation.of(AQIValue24h.class),
-//                        new AQIValue24hProcessOperator(lastStart)
+//                        new AQIValue24hProcessOperator(currentStart)
 //                );
 //
 //        DataStream<AQIValue5d> fiveDayStreamCurrentYear = aqiStreamCurrentYear // need more attributes
@@ -105,7 +120,7 @@ public class Main {
 //                .transform(
 //                        "AQIValue5dProcessOperator",
 //                        TypeInformation.of(AQIValue5d.class),
-//                        new AQIValue5dProcessOperator(lastStart, true)
+//                        new AQIValue5dProcessOperator(currentStart, true)
 //                );
 //
 //        DataStream<AQIImprovement> fiveDayImprovement = fiveDayStreamCurrentYear
@@ -135,6 +150,8 @@ public class Main {
         env.execute("benchmark");
         System.out.println(challengeClient.endBenchmark(newBenchmark));
         System.out.println("ended Benchmark");
+
+        System.exit(0);
     }
 }
 
