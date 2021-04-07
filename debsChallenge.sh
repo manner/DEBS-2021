@@ -177,10 +177,10 @@ if [ -z "$FLINK_PROPERTIES" ]; then
   export FLINK_PROPERTIES="jobmanager.rpc.address: $mainIP
 jobmanager.rpc.port: 6123
 jobmanager.memory.process.size: 1600m
-taskmanager.memory.process.size: 10g
-taskmanager.numberOfTaskSlots: 100
-taskmanager.memory.task.off-heap.size: 2g
-taskmanager.memory.jvm-metaspace.size: 2g
+taskmanager.memory.process.size: 8g
+taskmanager.memory.task.off-heap.size: 1g
+taskmanager.memory.jvm-metaspace.size: 1g
+taskmanager.numberOfTaskSlots: 5
 parallelism.default: $parallelism
 jobmanager.execution.failover-strategy: region"
 fi
