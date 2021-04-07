@@ -41,7 +41,7 @@ public class Main {
         String BENCHMARK_TYPE = System.getenv("BENCHMARK_TYPE");
         String BENCHMARK_NAME_PREFIX = System.getenv("BENCHMARK_NAME_PREFIX");
         BenchmarkConfiguration bc = BenchmarkConfiguration.newBuilder()
-                .setBenchmarkName(System.getenv("BENCHMARK_NAME_PREFIX") + new Date().toString())
+                .setBenchmarkName(System.getenv(BENCHMARK_NAME_PREFIX) + new Date().toString())
                 .setBatchSize(BATCH_SIZE)
                 .addQueries(BenchmarkConfiguration.Query.Q1)
                 .addQueries(BenchmarkConfiguration.Query.Q2)
