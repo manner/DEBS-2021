@@ -69,8 +69,6 @@ configurations {
     flinkShadowJar.exclude group: 'org.slf4j'
     flinkShadowJar.exclude group: 'org.apache.logging.log4j'
     flinkShadowJar.exclude group: 'com.esotericsoftware.kryo', module: 'kryo'
-
-//    compile.exclude group: 'com.esotericsoftware.kryo', module: 'kryo'
 }
 
 dependencies {
@@ -82,13 +80,14 @@ dependencies {
     testImplementation group: 'org.apache.flink', name: 'flink-streaming-java_2.12', version: '1.12.1'
     testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine'
 
+    flinkShadowJar group: 'com.twitter', name: 'chill-protobuf', version: '0.9.5'
+    flinkShadowJar group: 'com.twitter', name: 'chill_2.12', version: '0.9.5'
+    flinkShadowJar group: 'com.google.protobuf', name: 'protobuf-java', version: '3.15.7'
     flinkShadowJar group: 'org.geotools', name: 'gt-shapefile', version: geoToolsVersion
     flinkShadowJar group: 'org.geotools', name: 'gt-swing', version: geoToolsVersion
     flinkShadowJar group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.36.0'
     flinkShadowJar group: 'io.grpc', name: 'grpc-protobuf', version: '1.36.0'
     flinkShadowJar group: 'io.grpc', name: 'grpc-stub', version: '1.36.0'
-    flinkShadowJar group: 'com.twitter', name: 'chill-protobuf', version: '0.9.5'
-    flinkShadowJar group: 'com.google.protobuf', name: 'protobuf-java', version: '3.15.7'
 
     compile group: 'com.twitter', name: 'chill-protobuf', version: '0.9.5'
     compile group: 'com.twitter', name: 'chill_2.12', version: '0.9.5'
