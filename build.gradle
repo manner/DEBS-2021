@@ -70,7 +70,7 @@ configurations {
     flinkShadowJar.exclude group: 'org.apache.logging.log4j'
     flinkShadowJar.exclude group: 'com.esotericsoftware.kryo', module: 'kryo'
 
-    compile.exclude group: 'com.esotericsoftware.kryo', module: 'kryo'
+//    compile.exclude group: 'com.esotericsoftware.kryo', module: 'kryo'
 }
 
 dependencies {

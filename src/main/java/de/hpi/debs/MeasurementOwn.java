@@ -6,7 +6,9 @@ import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.Month;
+import java.util.List;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 public class MeasurementOwn implements Serializable {
 
@@ -74,6 +76,12 @@ public class MeasurementOwn implements Serializable {
                 city,
                 true
         );
+    }
+
+    public static List<MeasurementOwn> fromMeasurements(List<Measurement> measurementList) {
+        return measurementList.stream()
+                .map(m -> fromMeasurement(m, "testCity"))
+                .collect(Collectors.toList());
     }
 
     public boolean isLastYear() {
