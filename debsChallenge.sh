@@ -21,21 +21,17 @@ scriptName=$(basename -- "$0")
 
 # check if we want to upload this script to the cluster
 deploy="false"
-hardDeploy="false"
 run="false"
 deployScripts="false"
 deployJar="false"
 stop="false"
 help="false"
 runInternal="false"
-internalHardDeploy="false"
 internalStop="false"
 while test $# -gt 0
 do
   case "$1" in
     deploy) deploy="true"
-      ;;
-    hardDeploy) hardDeploy="true"
       ;;
     run) run="true"
       ;;
@@ -48,8 +44,6 @@ do
     help) help="true"
       ;;
     runInternal) runInternal="true"
-      ;;
-    internalHardDeploy) internalHardDeploy="true"
       ;;
     internalStop) internalStop="true"
       ;;
@@ -67,11 +61,10 @@ if [ "$help" = "true" ]; then
   echo "  DEBS_API_KEY=<yourApiKeyHere> bash $scriptName [Options]";
   echo "";
   echo "Options:";
-  echo "  deploy         - Deploys the debs challenge pipeline to the cluster. Make";
-  echo "                   sure that you build the jar with 'gradle shadowJar'.";
-  echo "  hardDeploy     - Like 'deploy' but also stops all previous flink managers.";
+  echo "  deploy         - Deploys the debs challenge pipeline to the flink cluster.";
+  echo "                   Make sure that you build the jar with 'gradle shadowJar'.";
   echo "  run            - Runs the pipeline on the cluster.";
-  echo "  deployScripts  - Deploys this script and starts the flink cluster.";
+  echo "  deployScripts  - Deploys this script and restarts flink cluster.";
   echo "  deployJar      - Deploys jar to the cluster.";
   echo "  stop           - Turns of the flink cluster.";
   echo "  help           - Prints this help text.";
@@ -79,11 +72,6 @@ if [ "$help" = "true" ]; then
 fi
 
 if [ "$deploy" = "true" ]; then
-  deployScripts="true";
-  deployJar="true";
-fi
-
-if [ "$hardDeploy" = "true" ]; then
   deployScripts="true";
   deployJar="true";
 fi
@@ -114,14 +102,7 @@ curIP=$(hostname -I | cut -d' ' -f1)
 if [ "$deployScripts" = "true" ] || [ "$stop" = "true" ]; then
   echo "Started to setup cluster"
   for i in $ports; do
-    if [ "$hardDeploy" = "true" ]; then
-      scp -P "$i" "$scriptPath" "group-19@challenge.msrg.in.tum.de:$scriptName";
-      if [ "$i" = "$jobmanagerPort" ]; then
-        ssh -p "$i" group-19@challenge.msrg.in.tum.de "DEBS_API_KEY=$debsApiKey screen -S jobmanager -d -m bash $scriptName internalHardDeploy"
-      else
-        ssh -p "$i" group-19@challenge.msrg.in.tum.de "DEBS_API_KEY=$debsApiKey screen -S taskmanager -d -m bash $scriptName internalHardDeploy"
-      fi
-    elif [ "$stop" = "true" ]; then
+    if [ "$stop" = "true" ]; then
       ssh -p "$i" group-19@challenge.msrg.in.tum.de "DEBS_API_KEY=$debsApiKey screen -S stop -d -m bash $scriptName internalStop"
     else
       scp -P "$i" "$scriptPath" "group-19@challenge.msrg.in.tum.de:$scriptName";
@@ -197,7 +178,7 @@ if [ -z "$FLINK_PROPERTIES" ]; then
 jobmanager.rpc.port: 6123
 jobmanager.memory.process.size: 1600m
 taskmanager.memory.process.size: 1728m
-taskmanager.numberOfTaskSlots: 1
+taskmanager.numberOfTaskSlots: 100
 parallelism.default: $parallelism
 jobmanager.execution.failover-strategy: region"
 fi
@@ -243,53 +224,25 @@ else
   echo "Skipped running debs pipeline"
 fi
 
+# override flink properties if provided
+echo "Started to stopp flink cluster"
+"$FLINK_HOME"/bin/taskmanager.sh stop-all;
+"$FLINK_HOME"/bin/jobmanager.sh stop-all;
+if [ -n "${FLINK_PROPERTIES}" ]; then
+  echo "${FLINK_PROPERTIES}" > "${CONF_FILE}"
+fi
+
 if [ "$internalStop" = "true" ]; then
-  echo "Started to stopp flink cluster"
-  "$FLINK_HOME"/bin/taskmanager.sh stop-all;
-  "$FLINK_HOME"/bin/jobmanager.sh stop-all;
-  if [ "$internalHardDeploy" = "false" ]; then
-    exit 0
-  fi
-else
-  echo "Skipped stopping flink cluster"
-fi
-
-# stop previous flink managers and start new flink managers if not running
-if [ "$internalHardDeploy" = "true" ]; then
-  echo "Started to start flink managers on flink cluster"
-  # override flink properties if provided
-  "$FLINK_HOME"/bin/taskmanager.sh stop-all;
-  "$FLINK_HOME"/bin/jobmanager.sh stop-all;
-  if [ -n "${FLINK_PROPERTIES}" ]; then
-    echo "${FLINK_PROPERTIES}" > "${CONF_FILE}"
-  fi
-  # start flink managers
-  if [ "$mainIP" = "$curIP" ]; then
-    screen -S taskmanager -d -m "$FLINK_HOME"/bin/taskmanager.sh start-foreground
-    "$FLINK_HOME"/bin/jobmanager.sh start-foreground
-  else
-    "$FLINK_HOME"/bin/taskmanager.sh start-foreground
-  fi
   exit 0
-else
-  echo "Skipped hard starting flink managers on flink cluster"
 fi
 
-# soft deploy
-if [ -z "$(top -n 1 -c -p "$(pgrep -d',' -f java)" | grep java)" ]; then
-  # override flink properties if provided
-  if [ -n "${FLINK_PROPERTIES}" ]; then
-    echo "${FLINK_PROPERTIES}" > "${CONF_FILE}"
-  fi
-  # start flink managers
-  if [ "$mainIP" = "$curIP" ]; then
-    screen -S taskmanager -d -m "$FLINK_HOME"/bin/taskmanager.sh start-foreground
-    "$FLINK_HOME"/bin/jobmanager.sh start-foreground
-  else
-    "$FLINK_HOME"/bin/taskmanager.sh start-foreground
-  fi
+# start flink managers
+echo "Started to start flink managers on flink cluster"
+if [ "$mainIP" = "$curIP" ]; then
+  screen -S taskmanager -d -m "$FLINK_HOME"/bin/taskmanager.sh start-foreground
+  "$FLINK_HOME"/bin/jobmanager.sh start-foreground
 else
-  echo "Skipped starting flink managers on flink cluster"
+  "$FLINK_HOME"/bin/taskmanager.sh start-foreground
 fi
 
 echo "Finished"
