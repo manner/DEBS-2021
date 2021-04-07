@@ -88,7 +88,7 @@ checkpointingInterval=300000
 parallelism=5;
 batchSize=10000
 benchmarkType="test"
-benchmarkNamePrefix="testrun "
+benchmarkNamePrefix="cluster test run "
 # ip of job manager
 mainIP="192.168.1.27"
 # cluster ports
