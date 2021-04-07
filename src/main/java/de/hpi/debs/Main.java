@@ -46,8 +46,6 @@ public class Main {
 
         // Get the locations
         Benchmark benchmark = challengeClient.createNewBenchmark(bc);
-        Locations locations = challengeClient.getLocations(benchmark);
-        LocationRetriever locationRetriever = new LocationRetriever(locations);
 
         //long CHECKPOINTING_INTERVAL = Long.parseLong(System.getenv("CHECKPOINTING_INTERVAL"));
 
@@ -64,9 +62,6 @@ public class Main {
         System.out.println(challengeClient.startBenchmark(newBenchmark));
 
         env.getConfig().registerTypeWithKryoSerializer(Batch.class, ProtobufSerializer.class);
-        env.getConfig().registerTypeWithKryoSerializer(Location.class, ProtobufSerializer.class);
-        env.getConfig().registerTypeWithKryoSerializer(Locations.class, ProtobufSerializer.class);
-        env.getConfig().registerTypeWithKryoSerializer(Measurement.class, ProtobufSerializer.class);
 
         DataStream<Batch> batches = AsyncDataStream.orderedWait(
                 env.fromSequence(0, 5),
@@ -82,12 +77,12 @@ public class Main {
 //                .transform(
 //                        "batchProcessor",
 //                        TypeInformation.of(MeasurementOwn.class),
-//                        new BatchProcessor(locationRetriever)
+//                        new BatchProcessor(newBenchmark)
 //                ).setParallelism(1);
 //        env.fromSequence(1, 10)
 //                AsyncDat
 //                        (new AsyncStreamGenerator(newBenchmark));
-//
+
 //        DataStream<MeasurementOwn> lastYearCities = cities.filter(MeasurementOwn::isLastYear);
 //        DataStream<MeasurementOwn> currentYearCities = cities.filter(MeasurementOwn::isCurrentYear);
 //
@@ -147,9 +142,13 @@ public class Main {
 //                ).setParallelism(1);
 
         //Start the benchmark
+        //System.out.println(challengeClient.startBenchmark(newBenchmark));
+        System.out.println("started Benchmark");
         env.execute("benchmark");
-        System.out.println(challengeClient.endBenchmark(newBenchmark));
+        //System.out.println(challengeClient.endBenchmark(newBenchmark));
         System.out.println("ended Benchmark");
+
+        channel.shutdown();
 
         System.exit(0);
     }

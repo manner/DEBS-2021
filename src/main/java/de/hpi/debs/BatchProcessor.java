@@ -1,27 +1,29 @@
 package de.hpi.debs;
 
-import de.tum.i13.bandency.Batch;
-import de.tum.i13.bandency.Measurement;
+import de.tum.i13.bandency.*;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.operators.ProcessOperator;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.util.Collector;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public class BatchProcessor extends ProcessOperator<Batch, MeasurementOwn> {
-    private final LocationRetriever locationRetriever;
+    private ManagedChannel channel;
+    private final Benchmark benchmark;
+    private LocationRetriever locationRetriever;
     private static final long A_YEAR = Time.days(365).toMilliseconds();
     private final HashMap<String, Long> cities;
     private final HashMap<String, Long> lastYearCities;
 
-    public BatchProcessor(
-            LocationRetriever locationRetriever
-    ) {
+    public BatchProcessor(Benchmark benchmark) {
         super(new ProcessFunction<>() {
             @Override
             public void processElement(Batch value, Context ctx, Collector<MeasurementOwn> out) {
@@ -29,9 +31,29 @@ public class BatchProcessor extends ProcessOperator<Batch, MeasurementOwn> {
             }
         });
 
-        this.locationRetriever = locationRetriever;
+        this.benchmark = benchmark;
         cities = new HashMap<>();
         lastYearCities = new HashMap<>();
+    }
+
+    @Override
+    public void open() throws IOException {
+        channel = ManagedChannelBuilder
+                .forAddress("challenge.msrg.in.tum.de", 5023)
+                .usePlaintext()
+                .build();
+
+        ChallengerGrpc.ChallengerBlockingStub challengeClient = ChallengerGrpc.newBlockingStub(channel)
+                .withMaxInboundMessageSize(100 * 1024 * 1024)
+                .withMaxOutboundMessageSize(100 * 1024 * 1024);
+
+        Locations locations = challengeClient.getLocations(benchmark);
+        locationRetriever = new LocationRetriever(locations);
+    }
+
+    @Override
+    public void close() {
+        channel.shutdown();
     }
 
     @Override
