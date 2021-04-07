@@ -91,6 +91,7 @@ dependencies {
     flinkShadowJar group: 'com.google.protobuf', name: 'protobuf-java', version: '3.15.7'
 
     compile group: 'com.twitter', name: 'chill-protobuf', version: '0.9.5'
+    compile group: 'com.twitter', name: 'chill_2.12', version: '0.9.5'
     compile group: 'com.google.protobuf', name: 'protobuf-java', version: '3.15.7'
     compile group: 'org.geotools', name: 'gt-shapefile', version: geoToolsVersion
     compile group: 'org.geotools', name: 'gt-swing', version: geoToolsVersion
