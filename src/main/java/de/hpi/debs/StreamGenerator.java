@@ -15,6 +15,7 @@ import java.util.Optional;
 
 public class StreamGenerator implements SourceFunction<MeasurementOwn> {
 
+    private static ChallengerGrpc.ChallengerBlockingStub challengeClient;
     private static LocationRetriever locationRetriever;
     private static final long A_YEAR = Time.days(365).toMilliseconds();
     private volatile boolean running = true;
@@ -27,13 +28,28 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
     public StreamGenerator(
             Benchmark benchmarkIn,
             int batchNumbersIn
-    ) {
+    ) throws IOException {
 
         benchmark = benchmarkIn;
         batchNumbers = batchNumbersIn;
         cities = new HashMap<>();
         lastYearCities = new HashMap<>();
         //System.out.println(locations);
+
+        ManagedChannel channel = ManagedChannelBuilder
+                .forAddress("challenge.msrg.in.tum.de", 5023)
+                .usePlaintext()
+                .build();
+
+        //for demo, we show the blocking stub
+        challengeClient = ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
+                .withMaxInboundMessageSize(100 * 1024 * 1024)
+                .withMaxOutboundMessageSize(100 * 1024 * 1024);
+
+        // Get the locations
+        Locations locations = challengeClient.getLocations(benchmark);
+        locationRetriever = new LocationRetriever(locations);
+
     }
 
     public void processBatch(SourceContext<MeasurementOwn> context, Batch batch) {
@@ -126,22 +142,7 @@ public class StreamGenerator implements SourceFunction<MeasurementOwn> {
     }
 
     @Override
-    public void run(SourceContext<MeasurementOwn> context) throws IOException {
-
-        ManagedChannel channel = ManagedChannelBuilder
-                .forAddress("challenge.msrg.in.tum.de", 5023)
-                .usePlaintext()
-                .build();
-
-        //for demo, we show the blocking stub
-        ChallengerGrpc.ChallengerBlockingStub challengeClient = ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
-                .withMaxInboundMessageSize(100 * 1024 * 1024)
-                .withMaxOutboundMessageSize(100 * 1024 * 1024);
-
-        // Get the locations
-        Locations locations = challengeClient.getLocations(benchmark);
-        locationRetriever = new LocationRetriever(locations);
-
+    public void run(SourceContext<MeasurementOwn> context) {
         while (running) {
             Batch batch =  challengeClient.nextBatch(benchmark);
 //            Batch batch = BatchSerializer.getBatch(Main.challengeClient, benchmark, cnt);
