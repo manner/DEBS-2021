@@ -142,8 +142,8 @@ if [ "$run" = "true" ]; then
   echo "Started to run the debs pipeline";
   ssh -p $jobmanagerPort group-19@challenge.msrg.in.tum.de "DEBS_API_KEY=$debsApiKey screen -S app -d -m bash $scriptName runInternal";
   echo "Login to the cluster with 'ssh -p $jobmanagerPort group-19@challenge.msrg.in.tum.de' and";
-  echo "then look with 'screen -ls' for the youngest screen and login with 'screen -r app'. To";
-  echo "detach from the screen without stopping it press 'ctrl + a' and then 'd'."
+  echo "login with 'screen -r app'. To detach from the screen without stopping it press 'ctrl + a'";
+  echo "and then 'd'."
   exit 0
 else
   echo "Skipped running debs pipeline"
