@@ -63,10 +63,13 @@ configurations {
     flinkShadowJar // dependencies which go into the shadowJar
 
     // always exclude these (also from transitive dependencies) since they are provided by Flink
-    linkShadowJar.exclude group: 'org.apache.flink', module: 'force-shading'
-    linkShadowJar.exclude group: 'com.google.code.findbugs', module: 'jsr305'
-    linkShadowJar.exclude group: 'org.slf4j'
-    linkShadowJar.exclude group: 'org.apache.logging.log4j'
+    flinkShadowJar.exclude group: 'org.apache.flink', module: 'force-shading'
+    flinkShadowJar.exclude group: 'com.google.code.findbugs', module: 'jsr305'
+    flinkShadowJar.exclude group: 'org.slf4j'
+    flinkShadowJar.exclude group: 'org.apache.logging.log4j'
+    flinkShadowJar.exclude group: 'com.esotericsoftware.kryo', module: 'kryo'
+
+    compile.exclude group: 'com.esotericsoftware.kryo', module: 'kryo'
 }
 
 dependencies {
@@ -83,7 +86,11 @@ dependencies {
     flinkShadowJar group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.36.0'
     flinkShadowJar group: 'io.grpc', name: 'grpc-protobuf', version: '1.36.0'
     flinkShadowJar group: 'io.grpc', name: 'grpc-stub', version: '1.36.0'
+    flinkShadowJar group: 'com.twitter', name: 'chill-protobuf', version: '0.9.5'
+    flinkShadowJar group: 'com.google.protobuf', name: 'protobuf-java', version: '3.15.7'
 
+    compile group: 'com.twitter', name: 'chill-protobuf', version: '0.9.5'
+    compile group: 'com.google.protobuf', name: 'protobuf-java', version: '3.15.7'
     compile group: 'org.geotools', name: 'gt-shapefile', version: geoToolsVersion
     compile group: 'org.geotools', name: 'gt-swing', version: geoToolsVersion
     compile group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.36.0'
