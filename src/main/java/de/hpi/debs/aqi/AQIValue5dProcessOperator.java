@@ -87,7 +87,7 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
         if (value.getValue().isWatermark()) { // emit results on watermark arrival
             if (state.value() == null) { // in case no records are processed beforehand watermark has all values
 
-                output.collect(new StreamRecord<>(new AQIValue5d(value.getValue()), value.getTimestamp() + (addOneYear ? Time.days(365).toMilliseconds() : 0)));
+                output.collect(new StreamRecord<>(new AQIValue5d(value.getValue()), value.getTimestamp()));
                 return;
             }
 
@@ -140,7 +140,7 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
                             curWindowEnd,
                             false,
                             (String) getCurrentKey()),
-                            curWindowEnd + (addOneYear ? Time.days(365).toMilliseconds() : 0)
+                            curWindowEnd
                     ));
                 }
 
@@ -160,7 +160,7 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
                     wm,
                     true,
                     value.getValue().getCity()),
-                    wm + (addOneYear ? Time.days(365).toMilliseconds() : 0)
+                    wm
             ));
 
             // remove slices that are already emitted and disjoint with all remaining windows that will be emitted
