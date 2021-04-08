@@ -89,7 +89,6 @@ public class Main {
                         TypeInformation.of(MeasurementOwn.class),
                         new BatchProcessor(locationRetriever)
                 ).setParallelism(1);
-        cities.print();
 
         DataStream<MeasurementOwn> lastYearCities = cities.filter(MeasurementOwn::isLastYear);
         DataStream<MeasurementOwn> currentYearCities = cities.filter(MeasurementOwn::isCurrentYear);
