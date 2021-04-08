@@ -63,6 +63,7 @@ public class Main {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         env.getConfig().registerTypeWithKryoSerializer(Batch.class, ProtobufSerializer.class);
+        env.getConfig().registerTypeWithKryoSerializer(Locations.class, ProtobufSerializer.class);
 
         int PARALLELISM = Integer.parseInt(System.getenv("PARALLELISM"));
         env.setParallelism(PARALLELISM); // sets the number of parallel for each instance
@@ -70,7 +71,6 @@ public class Main {
 
         // Create a new Benchmark
         Locations locations = LocationSerializer.getLocations(blockingChallengeClient, benchmark);
-        LocationRetriever locationRetriever = new LocationRetriever(locations);
 
 //        DataStream<MeasurementOwn> cities = env.addSource(new StreamGenerator(newBenchmark, 3));
 
@@ -87,7 +87,7 @@ public class Main {
                 .transform(
                         "batchProcessor",
                         TypeInformation.of(MeasurementOwn.class),
-                        new BatchProcessor(locationRetriever)
+                        new BatchProcessor(locations)
                 ).setParallelism(1);
 
         DataStream<MeasurementOwn> lastYearCities = cities.filter(MeasurementOwn::isLastYear);

@@ -1,5 +1,6 @@
 package de.hpi.debs;
 
+import de.tum.i13.bandency.Locations;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.operators.ProcessOperator;
@@ -11,6 +12,7 @@ import org.apache.flink.util.Collector;
 import de.tum.i13.bandency.Batch;
 import de.tum.i13.bandency.Measurement;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,12 +21,13 @@ import java.util.Optional;
 public class BatchProcessor extends ProcessOperator<Batch, MeasurementOwn> {
     private static final long A_YEAR = Time.days(365).toMilliseconds();
     private static final String NOT_AVAILABLE = "-1";
-    private static LocationRetriever locationRetriever;
+    private final Locations locations;
+    private LocationRetriever locationRetriever;
     private final HashMap<String, Long> cities;
     private final HashMap<String, Long> lastYearCities;
-    private final HashMap<Tuple2<Float, Float>, String> locations;
+    private final HashMap<Tuple2<Float, Float>, String> locationsMap;
 
-    public BatchProcessor(LocationRetriever locationRetriever) {
+    public BatchProcessor(Locations locations) {
         super(new ProcessFunction<>() {
             @Override
             public void processElement(Batch value, Context ctx, Collector<MeasurementOwn> out) {
@@ -32,18 +35,23 @@ public class BatchProcessor extends ProcessOperator<Batch, MeasurementOwn> {
             }
         });
 
-        BatchProcessor.locationRetriever = locationRetriever;
+        this.locations = locations;
         this.cities = new HashMap<>();
         this.lastYearCities = new HashMap<>();
-        this.locations = new HashMap<>();
+        this.locationsMap = new HashMap<>();
     }
 
     private String getCachedLocation(Measurement m) {
-        return locations.get(Tuple2.of(m.getLatitude(), m.getLongitude()));
+        return locationsMap.get(Tuple2.of(m.getLatitude(), m.getLongitude()));
     }
 
     private void addToCachedLocation(Measurement m, String city) {
-        locations.put(Tuple2.of(m.getLatitude(), m.getLongitude()), city);
+        locationsMap.put(Tuple2.of(m.getLatitude(), m.getLongitude()), city);
+    }
+
+    @Override
+    public void open() throws IOException {
+        this.locationRetriever = new LocationRetriever(locations);
     }
 
     @Override
