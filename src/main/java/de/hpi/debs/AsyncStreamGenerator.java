@@ -14,6 +14,7 @@ import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.ChallengerGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.concurrent.Executors;
@@ -51,22 +52,19 @@ public class AsyncStreamGenerator extends RichAsyncFunction<Long, Batch> {
 
     @Override
     public void asyncInvoke(Long input, ResultFuture<Batch> resultFuture) {
-        System.out.println("invoking for input: " + input);
         ListenableFuture<Batch> listenableFuture = challengeClient.nextBatch(benchmark);
 
         Futures.addCallback(listenableFuture, new FutureCallback<>() {
 
             @Override
             public void onSuccess(Batch result) {
-                System.out.println(result.getSeqId());
                 resultFuture.complete(Collections.singletonList(result));
             }
 
             @Override
-            public void onFailure(Throwable t) {
+            public void onFailure(@NotNull Throwable t) {
                 t.printStackTrace();
             }
         }, executor);
     }
-
 }
