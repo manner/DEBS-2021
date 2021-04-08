@@ -77,11 +77,11 @@ public class Main {
         System.out.println(blockingChallengeClient.startBenchmark(benchmark));
 
         DataStream<Batch> batches = AsyncDataStream.orderedWait(
-                env.fromSequence(0, 500),
+                env.fromSequence(0, 300).setParallelism(1),
                 new AsyncStreamGenerator(benchmark),
                 1000,
                 TimeUnit.SECONDS,
-                10);
+                10).setParallelism(1);
 
         DataStream<MeasurementOwn> cities = batches
                 .transform(
