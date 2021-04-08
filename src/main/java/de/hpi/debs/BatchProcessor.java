@@ -1,6 +1,6 @@
 package de.hpi.debs;
 
-import de.tum.i13.bandency.*;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.operators.ProcessOperator;
 import org.apache.flink.streaming.api.watermark.Watermark;
@@ -8,16 +8,21 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.util.Collector;
 
+import de.tum.i13.bandency.Batch;
+import de.tum.i13.bandency.Measurement;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public class BatchProcessor extends ProcessOperator<Batch, MeasurementOwn> {
-    private static LocationRetriever locationRetriever;
     private static final long A_YEAR = Time.days(365).toMilliseconds();
+    private static final String NOT_AVAILABLE = "-1";
+    private static LocationRetriever locationRetriever;
     private final HashMap<String, Long> cities;
     private final HashMap<String, Long> lastYearCities;
+    private final HashMap<Tuple2<Float, Float>, String> locations;
 
     public BatchProcessor(LocationRetriever locationRetriever) {
         super(new ProcessFunction<>() {
@@ -30,6 +35,15 @@ public class BatchProcessor extends ProcessOperator<Batch, MeasurementOwn> {
         BatchProcessor.locationRetriever = locationRetriever;
         this.cities = new HashMap<>();
         this.lastYearCities = new HashMap<>();
+        this.locations = new HashMap<>();
+    }
+
+    private String getCachedLocation(Measurement m) {
+        return locations.get(Tuple2.of(m.getLatitude(), m.getLongitude()));
+    }
+
+    private void addToCachedLocation(Measurement m, String city) {
+        locations.put(Tuple2.of(m.getLatitude(), m.getLongitude()), city);
     }
 
     @Override
@@ -53,33 +67,47 @@ public class BatchProcessor extends ProcessOperator<Batch, MeasurementOwn> {
         Optional<String> optionalCity;
 
         for (Measurement measurement : currentYearList) {
-            optionalCity = locationRetriever.findCityForMeasurement(measurement);
-            optionalCity.ifPresent(city -> {
-                MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, city);
+            String city = getCachedLocation(measurement);
+            if (city == null) {
+                optionalCity = locationRetriever.findCityForMeasurement(measurement);
+                city = optionalCity.orElse(NOT_AVAILABLE);
+                addToCachedLocation(measurement, city);
+            }
+            if (city.equals(NOT_AVAILABLE)) {
+                continue;
+            }
+            MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, city);
 
-                Long lastTimestamp = cities.get(city);
-                if (lastTimestamp == null) {
-                    cities.putIfAbsent(city, m.getTimestamp());
-                } else if (m.getTimestamp() > lastTimestamp) {
-                    cities.put(city, m.getTimestamp());
-                }
-                output.collect(new StreamRecord<>(m, m.getTimestamp()));
-            });
+            Long lastTimestamp = cities.get(city);
+            if (lastTimestamp == null) {
+                cities.putIfAbsent(city, m.getTimestamp());
+            } else if (m.getTimestamp() > lastTimestamp) {
+                cities.put(city, m.getTimestamp());
+            }
+            output.collect(new StreamRecord<>(m, m.getTimestamp()));
+
         }
 
         for (Measurement measurement : lastYearList) {
-            optionalCity = locationRetriever.findCityForMeasurement(measurement);
-            optionalCity.ifPresent(city -> {
-                MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, city, A_YEAR, true);
+            String city = getCachedLocation(measurement);
+            if (city == null) {
+                optionalCity = locationRetriever.findCityForMeasurement(measurement);
+                city = optionalCity.orElse(NOT_AVAILABLE);
+                addToCachedLocation(measurement, city);
+            }
+            if (city.equals(NOT_AVAILABLE)) {
+                continue;
+            }
+            MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, city, A_YEAR, true);
 
-                Long lastTimestamp = lastYearCities.get(city);
-                if (lastTimestamp == null) {
-                    lastYearCities.putIfAbsent(city, m.getTimestamp());
-                } else if (m.getTimestamp() > lastTimestamp) {
-                    lastYearCities.put(city, m.getTimestamp());
-                }
-                output.collect(new StreamRecord<>(m, m.getTimestamp()));
-            });
+            Long lastTimestamp = lastYearCities.get(city);
+            if (lastTimestamp == null) {
+                lastYearCities.putIfAbsent(city, m.getTimestamp());
+            } else if (m.getTimestamp() > lastTimestamp) {
+                lastYearCities.put(city, m.getTimestamp());
+            }
+            output.collect(new StreamRecord<>(m, m.getTimestamp()));
+
         }
 
         // send watermarks for each city in batch
