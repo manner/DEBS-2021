@@ -1,6 +1,7 @@
 package de.hpi.debs;
 
 import de.hpi.debs.aqi.*;
+import de.hpi.debs.serializer.LocationSerializer;
 import de.tum.i13.bandency.*;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.AsyncDataStream;
@@ -13,6 +14,10 @@ import com.twitter.chill.protobuf.ProtobufSerializer;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.Date;
@@ -36,16 +41,13 @@ public class Main {
         int BATCH_SIZE = Integer.parseInt(System.getenv("BATCH_SIZE"));
         String BENCHMARK_TYPE = System.getenv("BENCHMARK_TYPE");
         BenchmarkConfiguration bc = BenchmarkConfiguration.newBuilder()
-                .setBenchmarkName(System.getenv("BENCHMARK_NAME_PREFIX") + new Date().toString())
+                .setBenchmarkName(System.getenv("BENCHMARK_NAME_PREFIX") + new Date())
                 .setBatchSize(BATCH_SIZE)
                 .addQueries(BenchmarkConfiguration.Query.Q1)
                 .addQueries(BenchmarkConfiguration.Query.Q2)
                 .setToken(System.getenv("DEBS_API_KEY")) // go to: https://challenge.msrg.in.tum.de/profile/
                 .setBenchmarkType(BENCHMARK_TYPE) // Benchmark Type for testing
                 .build();
-
-        // Get the locations
-        Benchmark benchmark = challengeClient.createNewBenchmark(bc);
 
         //long CHECKPOINTING_INTERVAL = Long.parseLong(System.getenv("CHECKPOINTING_INTERVAL"));
 
@@ -56,6 +58,8 @@ public class Main {
 
         // Create a new Benchmark
         Benchmark newBenchmark = challengeClient.createNewBenchmark(bc);
+        Locations locations = LocationSerializer.getLocations(challengeClient, newBenchmark);
+        LocationRetriever locationRetriever = new LocationRetriever(locations);
 
 //        DataStream<MeasurementOwn> cities = env.addSource(new StreamGenerator(newBenchmark, 3));
 
@@ -77,8 +81,9 @@ public class Main {
 //                .transform(
 //                        "batchProcessor",
 //                        TypeInformation.of(MeasurementOwn.class),
-//                        new BatchProcessor(newBenchmark)
+//                        new BatchProcessor(locationRetriever)
 //                ).setParallelism(1);
+//        cities.print();
 //        env.fromSequence(1, 10)
 //                AsyncDat
 //                        (new AsyncStreamGenerator(newBenchmark));
@@ -142,7 +147,7 @@ public class Main {
 //                ).setParallelism(1);
 
         //Start the benchmark
-        //System.out.println(challengeClient.startBenchmark(newBenchmark));
+        //System.out.println(chal   1lengeClient.startBenchmark(newBenchmark));
         System.out.println("started Benchmark");
         env.execute("benchmark");
         //System.out.println(challengeClient.endBenchmark(newBenchmark));
