@@ -82,18 +82,19 @@ if [ -z "$DEBS_API_KEY" ]; then
   exit 1
 fi
 
-# all editable parameters
-debsApiKey="$DEBS_API_KEY"
-checkpointingInterval=300000
-parallelism=5;
-batchSize=10000
-benchmarkType="test"
-benchmarkNamePrefix="cluster test run "
 # ip of job manager
 mainIP="192.168.1.27"
 # cluster ports
 jobmanagerPort=10017
 ports="$jobmanagerPort 10018 10019 10020 10021" # last need to be client that runs jar
+# all editable parameters
+debsApiKey="$DEBS_API_KEY"
+checkpointingInterval=300000
+parallelism=80;
+numberOfTaskSlots=16
+batchSize=10000
+benchmarkType="Test"
+benchmarkNamePrefix="cluster test run "
 
 # get ip of machine
 curIP=$(hostname -I | cut -d' ' -f1)
@@ -140,7 +141,7 @@ fi
 
 if [ "$run" = "true" ]; then
   echo "Started to run the debs pipeline";
-  ssh -p $jobmanagerPort group-19@challenge.msrg.in.tum.de "DEBS_API_KEY=$debsApiKey screen -S app -d -m bash $scriptName runInternal";
+  ssh -p $jobmanagerPort group-19@challenge.msrg.in.tum.de "DEBS_API_KEY=$debsApiKey screen -L -S app -d -m bash $scriptName runInternal";
   echo "Login to the cluster with 'ssh -p $jobmanagerPort group-19@challenge.msrg.in.tum.de' and";
   echo "login with 'screen -r app'. To detach from the screen without stopping it press 'ctrl + a'";
   echo "and then 'd'."
@@ -180,7 +181,8 @@ jobmanager.memory.process.size: 1600m
 taskmanager.memory.process.size: 8g
 taskmanager.memory.task.off-heap.size: 1g
 taskmanager.memory.jvm-metaspace.size: 1g
-taskmanager.numberOfTaskSlots: 5
+taskmanager.network.memory.fraction: 0.2
+taskmanager.numberOfTaskSlots: $numberOfTaskSlots
 parallelism.default: $parallelism
 jobmanager.execution.failover-strategy: region"
 fi
