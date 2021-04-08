@@ -14,6 +14,7 @@ import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.ChallengerGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
@@ -24,7 +25,7 @@ public class AsyncStreamGenerator extends RichAsyncFunction<Long, Batch> {
     private ListeningExecutorService executor;
     private ManagedChannel channel;
     private ChallengerGrpc.ChallengerFutureStub challengeClient;
-    private Benchmark benchmark;
+    private final Benchmark benchmark;
 
 
     AsyncStreamGenerator(Benchmark benchmark) {
@@ -46,12 +47,12 @@ public class AsyncStreamGenerator extends RichAsyncFunction<Long, Batch> {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         channel.shutdown();
     }
 
     @Override
-    public void asyncInvoke(Long input, ResultFuture<Batch> resultFuture) throws Exception {
+    public void asyncInvoke(Long input, ResultFuture<Batch> resultFuture) {
         System.out.println("invoking for input: " + input);
         ListenableFuture<Batch> listenableFuture = challengeClient.nextBatch(benchmark);
 
@@ -59,13 +60,15 @@ public class AsyncStreamGenerator extends RichAsyncFunction<Long, Batch> {
 
             @Override
             public void onSuccess(@Nullable Batch result) {
-                System.out.println(result.getSeqId());
-//                BatchOwn batch = BatchOwn.from(result);
-                resultFuture.complete(Collections.singletonList(result));
+                if (result != null) {
+                    System.out.println(result.getSeqId());
+//                    BatchOwn batch = BatchOwn.from(result);
+                    resultFuture.complete(Collections.singletonList(result));
+                }
             }
 
             @Override
-            public void onFailure(Throwable t) {
+            public void onFailure(@NotNull Throwable t) {
                 t.printStackTrace();
             }
         }, executor);
