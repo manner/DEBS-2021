@@ -34,7 +34,7 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
 
-        long currentStart = LocalDateTime.of(2020, Month.APRIL, 1, 0, 0).toEpochSecond(ZoneOffset.UTC) * 1000;
+        long currentStart = LocalDateTime.of(2020, Month.JANUARY, 1, 0, 0).toEpochSecond(ZoneOffset.UTC) * 1000;
 
         ManagedChannel channel = ManagedChannelBuilder
                 .forAddress("challenge.msrg.in.tum.de", 5023)
