@@ -4,10 +4,12 @@ import de.tum.i13.bandency.Location;
 import de.tum.i13.bandency.Locations;
 import de.tum.i13.bandency.Measurement;
 import org.geotools.data.DataStore;
+import org.geotools.data.collection.SpatialIndexFeatureCollection;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.factory.CommonFactoryFinder;
+import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.geometry.jts.JTSFactoryFinder;
@@ -33,13 +35,13 @@ public class LocationRetriever implements Serializable {
 
     private static final FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
     private final GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
-    private final SpatialIndexFeatureCollectionOwn index;
-    private FeatureCollectionOwn featureCollection;
+    private final SpatialIndexFeatureCollection index;
+    private DefaultFeatureCollection featureCollection;
 
     public LocationRetriever(Locations locations) throws IOException {
         createDataStore(locations);
 
-        index = new SpatialIndexFeatureCollectionOwn(featureCollection.getSchema());
+        index = new SpatialIndexFeatureCollection(featureCollection.getSchema());
         index.addAll(featureCollection.collection());
     }
 
@@ -81,7 +83,7 @@ public class LocationRetriever implements Serializable {
         featureTypeBuilder.add("plz", String.class);
         SimpleFeatureType CITY = featureTypeBuilder.buildFeatureType();
 
-        featureCollection = new FeatureCollectionOwn();
+        featureCollection = new DefaultFeatureCollection();
 
         locations.getLocationsList().stream()
                 .map(toFeature(CITY, geometryFactory))
