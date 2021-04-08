@@ -5,7 +5,6 @@ import de.tum.i13.bandency.Measurement;
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.Month;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.stream.Collectors;

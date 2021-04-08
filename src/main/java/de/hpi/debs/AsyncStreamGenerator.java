@@ -14,18 +14,16 @@ import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.ChallengerGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.concurrent.Executors;
 
 public class AsyncStreamGenerator extends RichAsyncFunction<Long, Batch> {
 
+    private final Benchmark benchmark;
     private ListeningExecutorService executor;
     private ManagedChannel channel;
     private ChallengerGrpc.ChallengerFutureStub challengeClient;
-    private final Benchmark benchmark;
 
 
     AsyncStreamGenerator(Benchmark benchmark) {
@@ -43,7 +41,7 @@ public class AsyncStreamGenerator extends RichAsyncFunction<Long, Batch> {
                 .withMaxInboundMessageSize(100 * 1024 * 1024)
                 .withMaxOutboundMessageSize(100 * 1024 * 1024);
 
-        executor = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(4));
+        executor = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(10));
     }
 
     @Override
@@ -59,16 +57,13 @@ public class AsyncStreamGenerator extends RichAsyncFunction<Long, Batch> {
         Futures.addCallback(listenableFuture, new FutureCallback<>() {
 
             @Override
-            public void onSuccess(@Nullable Batch result) {
-                if (result != null) {
-                    System.out.println(result.getSeqId());
-//                    BatchOwn batch = BatchOwn.from(result);
-                    resultFuture.complete(Collections.singletonList(result));
-                }
+            public void onSuccess(Batch result) {
+                System.out.println(result.getSeqId());
+                resultFuture.complete(Collections.singletonList(result));
             }
 
             @Override
-            public void onFailure(@NotNull Throwable t) {
+            public void onFailure(Throwable t) {
                 t.printStackTrace();
             }
         }, executor);
