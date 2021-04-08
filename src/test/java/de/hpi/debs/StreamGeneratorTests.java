@@ -8,7 +8,6 @@ import de.tum.i13.bandency.Batch;
 import de.tum.i13.bandency.Measurement;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -174,6 +173,7 @@ public class StreamGeneratorTests {
                                     m.getLongitude(),
                                     timestamp,
                                     "Essen",
+                                    false,
                                     false);
 
                             groundTruth.add(new StreamRecord<>(essen, timestamp));
@@ -185,6 +185,7 @@ public class StreamGeneratorTests {
                                     m.getLongitude(),
                                     timestamp,
                                     "Berlin Moabit",
+                                    false,
                                     false);
 
                             groundTruth.add(new StreamRecord<>(berlin, timestamp));

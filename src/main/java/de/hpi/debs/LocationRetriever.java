@@ -4,12 +4,10 @@ import de.tum.i13.bandency.Location;
 import de.tum.i13.bandency.Locations;
 import de.tum.i13.bandency.Measurement;
 import org.geotools.data.DataStore;
-import org.geotools.data.collection.SpatialIndexFeatureCollection;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.factory.CommonFactoryFinder;
-import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.geometry.jts.JTSFactoryFinder;
@@ -28,23 +26,20 @@ import org.opengis.filter.spatial.BBOX;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 
-public class LocationRetriever {
+public class LocationRetriever implements Serializable {
 
     private static final FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
     private final GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
-    private final SpatialIndexFeatureCollection index;
-    private DefaultFeatureCollection featureCollection;
+    private final SpatialIndexFeatureCollectionOwn index;
+    private FeatureCollectionOwn featureCollection;
 
     public LocationRetriever(Locations locations) throws IOException {
         createDataStore(locations);
 
-        index = new SpatialIndexFeatureCollection(featureCollection.getSchema());
+        index = new SpatialIndexFeatureCollectionOwn(featureCollection.getSchema());
         index.addAll(featureCollection.collection());
     }
 
@@ -68,7 +63,6 @@ public class LocationRetriever {
 
     }
 
-
     private static Coordinate[] getCoordinates(List<de.tum.i13.bandency.Point> points) {
         return points.stream()
                 .map(LocationRetriever::pointToCoordinate)
@@ -87,7 +81,7 @@ public class LocationRetriever {
         featureTypeBuilder.add("plz", String.class);
         SimpleFeatureType CITY = featureTypeBuilder.buildFeatureType();
 
-        featureCollection = new DefaultFeatureCollection();
+        featureCollection = new FeatureCollectionOwn();
 
         locations.getLocationsList().stream()
                 .map(toFeature(CITY, geometryFactory))
@@ -108,8 +102,10 @@ public class LocationRetriever {
 
     public Optional<String> findNearestPolygon(Coordinate coordinate) {
         //final double MAX_SEARCH_DISTANCE = index.getBounds().getSpan(0);
-        ReferencedEnvelope search = new ReferencedEnvelope(new Envelope(coordinate),
-                index.getSchema().getCoordinateReferenceSystem());
+        ReferencedEnvelope search = new ReferencedEnvelope(
+                new Envelope(coordinate),
+                index.getSchema().getCoordinateReferenceSystem()
+        );
         search.expandBy(0.001);
         BBOX bbox = ff.bbox(ff.property(index.getSchema().getGeometryDescriptor().getName()), search);
         SimpleFeatureCollection candidates = index.subCollection(bbox);
@@ -138,5 +134,15 @@ public class LocationRetriever {
 
     public Optional<String> findCityForMeasurement(Measurement measurement) {
         return findCityForLocation(new PointOwn(measurement));
+    }
+
+    @Override
+    public String toString() {
+        return "LocationRetriever{" +
+                "\n    ff=" + ff +
+                ",\n    geometryFactory=" + geometryFactory +
+                ",\n    index=" + index +
+                ",\n    featureCollection=" + featureCollection +
+                "\n}";
     }
 }

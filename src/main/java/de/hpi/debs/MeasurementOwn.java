@@ -5,12 +5,12 @@ import de.tum.i13.bandency.Measurement;
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.Month;
+import java.util.List;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 public class MeasurementOwn implements Serializable {
 
-    private static final LocalDateTime FIRST_OF_2020 = LocalDateTime.of(2020, Month.JANUARY, 1, 0, 0);
     private final float p1;
     private final float p2;
 
@@ -20,8 +20,9 @@ public class MeasurementOwn implements Serializable {
     private final long timestamp;
     private boolean isWatermark;
     private String city;
+    private final boolean isLastYear;
 
-    public MeasurementOwn(float p1, float p2, float latitude, float longitude, long timestamp, String city, boolean watermark) {
+    public MeasurementOwn(float p1, float p2, float latitude, float longitude, long timestamp, String city, boolean watermark, boolean isLastYear) {
         this.p1 = p1;
         this.p2 = p2;
         this.latitude = latitude;
@@ -29,17 +30,7 @@ public class MeasurementOwn implements Serializable {
         this.timestamp = timestamp;
         this.city = city;
         this.isWatermark = watermark;
-    }
-
-    public MeasurementOwn(MeasurementOwn m) {
-        this(
-                m.getP1(),
-                m.getP2(),
-                m.getLatitude(),
-                m.getLongitude(),
-                m.getTimestamp(),
-                m.getCity(),
-                m.isWatermark());
+        this.isLastYear = isLastYear;
     }
 
     public static MeasurementOwn fromMeasurement(Measurement m, String city) {
@@ -50,18 +41,20 @@ public class MeasurementOwn implements Serializable {
                 m.getLongitude(),
                 m.getTimestamp().getSeconds() * 1000 + m.getTimestamp().getNanos() / 1000,
                 city,
+                false,
                 false);
     }
 
-    public static MeasurementOwn fromMeasurement(Measurement m, String city, boolean watermark) {
+    public static MeasurementOwn fromMeasurement(Measurement m, String city, long addToTS, boolean isLastYear) {
         return new MeasurementOwn(
                 m.getP1(),
                 m.getP2(),
                 m.getLatitude(),
                 m.getLongitude(),
-                m.getTimestamp().getSeconds() * 1000 + m.getTimestamp().getNanos() / 1000,
+                m.getTimestamp().getSeconds() * 1000 + m.getTimestamp().getNanos() / 1000 + addToTS,
                 city,
-                watermark);
+                false,
+                isLastYear);
     }
 
     public static MeasurementOwn createWatermark(long timestamp, String city) {
@@ -72,16 +65,23 @@ public class MeasurementOwn implements Serializable {
                 0,
                 timestamp,
                 city,
-                true
+                true,
+                false
         );
     }
 
+    public static List<MeasurementOwn> fromMeasurements(List<Measurement> measurementList) {
+        return measurementList.stream()
+                .map(m -> fromMeasurement(m, "testCity"))
+                .collect(Collectors.toList());
+    }
+
     public boolean isLastYear() {
-        return getLocalDateTimeStamp().isBefore(FIRST_OF_2020);
+        return isLastYear;
     }
 
     public boolean isCurrentYear() {
-        return !isLastYear();
+        return !isLastYear;
     }
 
     public boolean isWatermark() {
@@ -104,28 +104,12 @@ public class MeasurementOwn implements Serializable {
         return p2;
     }
 
-    public PointOwn getPoint() {
-        return new PointOwn(latitude, longitude);
-    }
-
-    public float getLatitude() {
-        return latitude;
-    }
-
-    public float getLongitude() {
-        return longitude;
-    }
-
     public long getTimestamp() {
         return timestamp;
     }
 
     public LocalDateTime getLocalDateTimeStamp() {
         return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), TimeZone.getTimeZone("GMT").toZoneId());
-    }
-
-    public void setIsWatermark() {
-        isWatermark = true;
     }
 
     public boolean equals(Object o) {
