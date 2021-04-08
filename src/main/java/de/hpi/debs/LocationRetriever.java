@@ -63,7 +63,6 @@ public class LocationRetriever implements Serializable {
 
     }
 
-
     private static Coordinate[] getCoordinates(List<de.tum.i13.bandency.Point> points) {
         return points.stream()
                 .map(LocationRetriever::pointToCoordinate)
