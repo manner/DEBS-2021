@@ -5,6 +5,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.operators.ProcessOperator;
+import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.util.Collector;
@@ -127,5 +128,6 @@ public class BatchProcessor extends ProcessOperator<Batch, MeasurementOwn> {
                 output.collect(new StreamRecord<>(watermark, watermark.getTimestamp()));
             }
         }
+        output.emitWatermark(new Watermark(watermarkTimestamp));
     }
 }
