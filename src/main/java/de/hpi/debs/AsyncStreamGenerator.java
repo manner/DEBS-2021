@@ -41,7 +41,7 @@ public class AsyncStreamGenerator extends RichAsyncFunction<Long, Batch> {
                 .withMaxInboundMessageSize(100 * 1024 * 1024)
                 .withMaxOutboundMessageSize(100 * 1024 * 1024);
 
-        executor = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(4));
+        executor = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(10));
     }
 
     @Override
