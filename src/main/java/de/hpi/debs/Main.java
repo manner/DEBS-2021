@@ -74,8 +74,6 @@ public class Main {
 
 //        DataStream<MeasurementOwn> cities = env.addSource(new StreamGenerator(newBenchmark, 3));
 
-        System.out.println(blockingChallengeClient.startBenchmark(benchmark));
-
         DataStream<Batch> batches = AsyncDataStream.orderedWait(
                 env.fromSequence(0, 300).setParallelism(1),
                 new AsyncStreamGenerator(benchmark),
