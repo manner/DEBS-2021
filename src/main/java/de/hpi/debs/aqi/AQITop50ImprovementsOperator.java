@@ -27,6 +27,8 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
     private int seqCounter;
     private ChallengerGrpc.ChallengerFutureStub challengeClient;
     private ManagedChannel channel;
+    private TopKCities.Builder topKCitiesBuilder;
+    private ResultQ1.Builder resultBuilder;
 
     public AQITop50ImprovementsOperator(long benchmarkId) {
         super(new ProcessFunction<>() {
@@ -56,6 +58,9 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
         challengeClient = ChallengerGrpc.newFutureStub(channel)
                 .withMaxInboundMessageSize(100 * 1024 * 1024)
                 .withMaxOutboundMessageSize(100 * 1024 * 1024);
+
+        topKCitiesBuilder = TopKCities.newBuilder();
+        resultBuilder = ResultQ1.newBuilder();
     }
 
     @Override
@@ -82,7 +87,8 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
         List<TopKCities> topKCities = new ArrayList<>();
         for (int i = 0; i < top50Improvements.size(); i++) {
             AQIImprovement improvement = top50Improvements.get(i);
-            TopKCities city = TopKCities.newBuilder()
+            topKCitiesBuilder.clear();
+            TopKCities city = topKCitiesBuilder
                     .setPosition(i + 1)
                     .setCity(improvement.getCity())
                     .setAverageAQIImprovement(roundAndMultiply(improvement.getImprovement()))
@@ -91,8 +97,9 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
                     .build();
             topKCities.add(city);
         }
-//        topKCities.forEach(System.out::println);
-        ResultQ1 result = ResultQ1.newBuilder()
+
+        resultBuilder.clear();
+        ResultQ1 result = resultBuilder
                 .addAllTopkimproved(topKCities)
                 .setBatchSeqId(seqCounter++) // TODO: FIX THIS!
                 .setBenchmarkId(benchmarkId)

@@ -28,6 +28,8 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
     private int seqCounter;
     private ChallengerGrpc.ChallengerFutureStub challengeClient;
     private ManagedChannel channel;
+    private TopKStreaks.Builder topKStreaksBuilder;
+    private ResultQ2.Builder resultBuilder;
 
     public HistogramOperator(long benchmarkId) {
         super(new ProcessFunction<>() {
@@ -56,6 +58,9 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
         challengeClient = ChallengerGrpc.newFutureStub(channel)
                 .withMaxInboundMessageSize(100 * 1024 * 1024)
                 .withMaxOutboundMessageSize(100 * 1024 * 1024);
+
+        topKStreaksBuilder = TopKStreaks.newBuilder();
+        resultBuilder = ResultQ2.newBuilder();
     }
 
     @Override
@@ -75,7 +80,8 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
             return;
         }
         List<TopKStreaks> topKStreaks = calculate(streaks.get(), mark.getTimestamp());
-        ResultQ2 result = ResultQ2.newBuilder()
+        resultBuilder.clear();
+        ResultQ2 result = resultBuilder
                 .addAllHistogram(topKStreaks)
                 .setBatchSeqId(seqCounter++) // TODO: FIX THIS!
                 .setBenchmarkId(benchmarkId)
@@ -114,7 +120,8 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
                 percent = Math.round((float) numberOfStreaks / totalStreaks * 1000);
             }
             //System.out.println(i + ":" + " from: " + i * bucketSize + " to: " + (i + 1) * bucketSize + " percent: " + percent);
-            TopKStreaks streak = TopKStreaks.newBuilder()
+            topKStreaksBuilder.clear();
+            TopKStreaks streak = topKStreaksBuilder
                     .setBucketFrom(i * bucketSize)
                     .setBucketTo((i + 1) * bucketSize)
                     .setBucketPercent(percent)
