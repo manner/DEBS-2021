@@ -26,6 +26,8 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
     private final long benchmarkId;
     protected ListState<Streak> streaks;
     private int seqCounter;
+    private ChallengerGrpc.ChallengerFutureStub challengeClient;
+    private ManagedChannel channel;
 
     public HistogramOperator(long benchmarkId) {
         super(new ProcessFunction<>() {
@@ -46,8 +48,20 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
                         Streak.class);
 
         streaks = getOperatorStateBackend().getListState(descriptor);
+        channel = ManagedChannelBuilder
+                .forAddress("challenge.msrg.in.tum.de", 5023)
+                .usePlaintext()
+                .build();
+
+        challengeClient = ChallengerGrpc.newFutureStub(channel)
+                .withMaxInboundMessageSize(100 * 1024 * 1024)
+                .withMaxOutboundMessageSize(100 * 1024 * 1024);
     }
 
+    @Override
+    public void close() throws Exception {
+        channel.shutdownNow();
+    }
 
     @Override
     public void processElement(StreamRecord<Streak> value) throws Exception {
@@ -67,17 +81,7 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
                 .setBenchmarkId(benchmarkId)
                 .build();
 
-        ManagedChannel channel = ManagedChannelBuilder
-                .forAddress("challenge.msrg.in.tum.de", 5023)
-                .usePlaintext()
-                .build();
-
-        ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
-                .withMaxInboundMessageSize(100 * 1024 * 1024)
-                .withMaxOutboundMessageSize(100 * 1024 * 1024)
-                .resultQ2(result);
-        channel.shutdownNow();
-
+        challengeClient.resultQ2(result);
         streaks.clear();
     }
 
