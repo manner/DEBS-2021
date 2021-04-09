@@ -104,7 +104,6 @@ public class BatchProcessor extends ProcessOperator<Batch, MeasurementOwn> {
                 cities.put(city, m.getTimestamp());
             }
             output.collect(new StreamRecord<>(m, m.getTimestamp()));
-
         }
 
         for (Measurement measurement : lastYearList) {
@@ -128,7 +127,6 @@ public class BatchProcessor extends ProcessOperator<Batch, MeasurementOwn> {
                 lastYearCities.put(city, m.getTimestamp());
             }
             output.collect(new StreamRecord<>(m, m.getTimestamp()));
-
         }
 
         // send watermarks for each city in batch
