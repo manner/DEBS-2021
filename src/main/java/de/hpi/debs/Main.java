@@ -6,6 +6,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
+import com.google.protobuf.Empty;
 import com.twitter.chill.protobuf.ProtobufSerializer;
 import de.hpi.debs.aqi.AQIImprovement;
 import de.hpi.debs.aqi.AQIImprovementProcessor;
@@ -21,6 +22,7 @@ import de.tum.i13.bandency.Benchmark;
 import de.tum.i13.bandency.BenchmarkConfiguration;
 import de.tum.i13.bandency.ChallengerGrpc;
 import de.tum.i13.bandency.Locations;
+import de.tum.i13.bandency.Ping;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
