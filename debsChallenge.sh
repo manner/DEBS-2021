@@ -104,7 +104,7 @@ if [ $numberOfTaskSlots = 0 ]; then
     numberOfTaskSlots=1
   else
     ((numberOfTaskSlots=parallelism/numberOfNodes));
-    if [ ! $((parallelis%numberOfNodes)) = 0 ]; then
+    if [ ! $((parallelism%numberOfNodes)) = 0 ]; then
       ((numberOfTaskSlots+=1))
     fi
   fi
