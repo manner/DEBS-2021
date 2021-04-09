@@ -90,11 +90,25 @@ ports="$jobmanagerPort 10018 10019 10020 10021" # last need to be client that ru
 # all editable parameters
 debsApiKey="$DEBS_API_KEY"
 checkpointingInterval=300000
-parallelism=80;
-numberOfTaskSlots=16
+parallelism=5
+numberOfNodes=0
+numberOfTaskSlots=5 # 0 for auto computation
 batchSize=10000
-benchmarkType="Test"
+benchmarkType="Evaluation"
 benchmarkNamePrefix="cluster test run "
+for i in $ports; do
+  ((numberOfNodes+=1))
+done
+if [ $numberOfTaskSlots = 0 ]; then
+  if [ $((parallelism<numberOfNodes)) = 1 ]; then
+    numberOfTaskSlots=1
+  else
+    ((numberOfTaskSlots=parallelism/numberOfNodes));
+    if [ ! $((parallelis%numberOfNodes)) = 0 ]; then
+      ((numberOfTaskSlots+=1))
+    fi
+  fi
+fi
 
 # get ip of machine
 curIP=$(hostname -I | cut -d' ' -f1)
