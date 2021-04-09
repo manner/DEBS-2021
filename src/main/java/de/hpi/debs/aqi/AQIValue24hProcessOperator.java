@@ -63,17 +63,18 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
 
     @Override
     public void processElement(StreamRecord<MeasurementOwn> value) throws Exception {
-        if (state.value() != null && value.getTimestamp() < state.value().getLastWatermark()) // ignore late events
+        ParticleWindowState window = state.value();
+
+        if (window != null && value.getTimestamp() < window.getLastWatermark()) // ignore late events
             return;
 
         if (value.getValue().isWatermark()) { // emit results on watermark arrival
-            if (state.value() == null) // in case no records are processed beforehand
+            if (window == null) // in case no records are processed beforehand
                 return;
 
             long wm = value.getTimestamp();
-            long lw = state.value().getLastWatermark();
-            state.value().updateLastWatermark(wm);
-            ParticleWindowState window = state.value();
+            long lw = window.getLastWatermark();
+            window.updateLastWatermark(wm);
 
             double deltaWindowSum1;
             double deltaWindowSum2;
@@ -83,10 +84,7 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
             boolean active;
 
             // go to first slice that need to emit window result
-            int i = window.getSlicesNr() - 1;
-
-            while (0 < i && lw < window.getEndOfSlice(i - 1)) // Do we need to emit previous window?
-                --i;
+            int i = window.getCheckpoint();
 
             curWindowEnd = window.getEndOfSlice(i);
 
@@ -95,7 +93,7 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
                 active = false;
 
                 if (0 < i) { // use pre-aggregate if possible
-                    if (state.value().preAggregate(i)) {
+                    if (window.preAggregate(i)) {
                         // get aggregate of previous windows
                         deltaWindowSum1 = window.getP1Slice(i - 1).getWindowSum();
                         deltaWindowSum2 = window.getP2Slice(i - 1).getWindowSum();
@@ -109,7 +107,7 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
                             deltaWindowCount -= window.getP2Slice(startIdx).getCount();
                         }
 
-                        state.value().addPreAggregate(i, deltaWindowSum1, deltaWindowSum2, deltaWindowCount);
+                        window.addPreAggregate(i, deltaWindowSum1, deltaWindowSum2, deltaWindowCount);
                     }
 
                     if (!window.getP1Slice(i - 1).isEmpty())
@@ -120,8 +118,8 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
                     active = true;
 
                 if (active && lw < curWindowEnd) {
-                    float avgP1 = (float) state.value().getP1Slice(i).getWindowAvg();
-                    float avgP2 = (float) state.value().getP2Slice(i).getWindowAvg();
+                    float avgP1 = (float) window.getP1Slice(i).getWindowAvg();
+                    float avgP2 = (float) window.getP2Slice(i).getWindowAvg();
 
                     output.collect(new StreamRecord<>(new AQIValue24h(
                             value.getValue().getSeq(),
@@ -137,10 +135,10 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
 
                 ++i;
 
-                if (i == window.getSlicesNr()) // check if there where events received in the past v5minInSec
-                    state.value().addSlice(step);
+                if (i == window.getSlicesNr()) // check if we need to add an empty slice with pre-aggregation
+                    window.addSlice(step);
 
-                curWindowEnd = state.value().getEndOfSlice(i);
+                curWindowEnd = window.getEndOfSlice(i);
             }
 
             // emit "watermark window"
@@ -223,47 +221,51 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
             }
 
             // remove slices that are already emitted and disjoint with all remaining windows that will be emitted
-            state.value().removeSlices(wm - size);
+            window.removeSlices(wm - size);
 
             // additionally remove all empty slices from tail
-            state.value().removeEmptyTail();
+            window.removeEmptyTail();
 
             // clear state for this key if there are no slices anymore
-            if (state.value().getSlicesNr() == 0) {
+            if (window.getSlicesNr() == 0) {
                 state.clear();
+            } else {
+                state.update(window);
             }
 
             return;
         }
 
-        if (state.value() == null) {
+        if (window == null) {
             long newStart = (value.getTimestamp() - start) % step;
             newStart = value.getTimestamp() - newStart; // get correct start of window in case city measures very late
-            state.update(new ParticleWindowState(
+            window = new ParticleWindowState(
                     (String) getCurrentKey(),
                     newStart,
                     newStart + step
-            ));
+            );
         }
 
         // add tuple that actually has a matching city
-        int i = state.value().getSlicesNr() - 1;
-        int in = state.value().in(i, value.getTimestamp());
+        int i = window.getSlicesNr() - 1;
+        int in = window.in(i, value.getTimestamp());
 
         // search for correct slice
         while (in != 0) {
             if (in < 0) { // go one slice to the past
                 --i;
             } else {
-                state.value().addSlice(step); // add new slice to end
+                window.addSlice(step); // add new slice to end
 
                 ++i;
             }
 
-            in = state.value().in(i, value.getTimestamp());
+            in = window.in(i, value.getTimestamp());
         }
 
         // update slice by new event
-        state.value().addMeasure(i, value.getValue().getP1(), value.getValue().getP2(), value.getTimestamp());
+        window.addMeasure(i, value.getValue().getP1(), value.getValue().getP2(), value.getTimestamp());
+
+        state.update(window);
     }
 }

@@ -81,20 +81,21 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
 
     @Override
     public void processElement(StreamRecord<AQIValue24h> value) throws Exception {
-        if (state.value() != null && value.getTimestamp() < state.value().getLastWatermark()) // ignore late events
+        AqiWindowState window = state.value();
+
+        if (window != null && value.getTimestamp() < window.getLastWatermark()) // ignore late events
             return;
 
         if (value.getValue().isWatermark()) { // emit results on watermark arrival
-            if (state.value() == null) { // in case no records are processed beforehand watermark has all values
+            if (window == null) { // in case no records are processed beforehand watermark has all values
 
                 output.collect(new StreamRecord<>(new AQIValue5d(value.getValue()), value.getTimestamp()));
                 return;
             }
 
             long wm = value.getTimestamp();
-            long lw = state.value().getLastWatermark();
-            state.value().updateLastWatermark(wm);
-            AqiWindowState window = state.value();
+            long lw = window.getLastWatermark();
+            window.updateLastWatermark(wm);
 
             double deltaWindowSum;
             int deltaWindowCount;
@@ -102,17 +103,14 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
             long curWindowEnd;
 
             // go to first slice that need to emit window result
-            int i = window.getSlicesNr() - 1;
-
-            while (0 < i && lw < window.getEndOfSlice(i - 1)) // Do we need to emit previous window?
-                --i;
+            int i = window.getCheckpoint();
 
             curWindowEnd = window.getEndOfSlice(i);
 
             // emit results of pending windows
             while (curWindowEnd <= wm) {
                 if (0 < i) { // use pre-aggregate if possible
-                    if (state.value().preAggregate(i)) {
+                    if (window.preAggregate(i)) {
                         // get aggregate of previous windows
                         deltaWindowSum = window.getAqiSlice(i - 1).getWindowSum();
                         deltaWindowCount = window.getAqiSlice(i - 1).getWindowCount();
@@ -124,12 +122,12 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
                             deltaWindowCount -= window.getAqiSlice(startIdx).getCount();
                         }
 
-                        state.value().addPreAggregate(i, deltaWindowSum, deltaWindowCount);
+                        window.addPreAggregate(i, deltaWindowSum, deltaWindowCount);
                     }
                 }
 
                 if (!window.getAqiSlice(i).isEmpty() && lw < curWindowEnd) {
-                    double avgAqi = state.value().getAqiSlice(i).getWindowAvg();
+                    double avgAqi = window.getAqiSlice(i).getWindowAvg();
                     int curAqiP1 = window.getAqiSlice(i).getAqiP1s().get(0);
                     int curAqiP2 = window.getAqiSlice(i).getAqiP2s().get(0);
 
@@ -148,9 +146,9 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
                 ++i;
 
                 if (i == window.getSlicesNr()) // check if there where events received in the past v5minInSec
-                    state.value().addSlice(step);
+                    window.addSlice(step);
 
-                curWindowEnd = state.value().getEndOfSlice(i);
+                curWindowEnd = window.getEndOfSlice(i);
             }
 
             // emit watermark with current 24h averages
@@ -166,54 +164,58 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
             ));
 
             // remove slices that are already emitted and disjoint with all remaining windows that will be emitted
-            state.value().removeSlices(wm - size);
+            window.removeSlices(wm - size);
 
             // additionally remove all empty slices from tail
-            state.value().removeEmptyTail();
+            window.removeEmptyTail();
 
             // clear state for this key if there are no slices anymore
-            if (state.value().getSlicesNr() == 0) {
+            if (window.getSlicesNr() == 0) {
                 state.clear();
+            } else {
+                state.update(window);
             }
 
             return;
         }
 
-        if (state.value() == null) {
+        if (window == null) {
             long newStart = value.getTimestamp() - size;
-            state.update(new AqiWindowState(
+            window = new AqiWindowState(
                     (String) getCurrentKey(),
                     newStart,
                     value.getTimestamp()
-            ));
+            );
         }
 
         // add tuple that actually has a matching city
-        int i = state.value().getSlicesNr() - 1;
-        int in = state.value().in(i, value.getTimestamp());
+        int i = window.getSlicesNr() - 1;
+        int in = window.in(i, value.getTimestamp());
 
         // search for correct slice
         while (in != 0) {
-            if (state.value().getAqiSlice(i).getEnd() == value.getTimestamp()) // as AQIValue24h slices are mapped to AQIValue5d slices with same end
+            if (window.getAqiSlice(i).getEnd() == value.getTimestamp()) // as AQIValue24h slices are mapped to AQIValue5d slices with same end
                 break;
             if (in < 0) { // go one slice to the past
                 --i;
             } else {
-                state.value().addSlice(step); // add new slice to end
+                window.addSlice(step); // add new slice to end
 
                 ++i;
             }
 
-            in = state.value().in(i, value.getTimestamp());
+            in = window.in(i, value.getTimestamp());
         }
 
         // update slice by new event
-        state.value().addMeasure(
+        window.addMeasure(
                 i,
                 value.getValue().getAqi(),
                 value.getValue().getAqiP1(),
                 value.getValue().getAqiP2(),
                 value.getTimestamp()
         );
+
+        state.update(window);
     }
 }

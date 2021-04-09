@@ -25,6 +25,10 @@ public class ParticleWindowState {
         this.executionMode = 0;
     }
 
+    public int getCheckpoint() {
+        return checkpoint;
+    }
+
     public String getCity() {
         return city;
     }

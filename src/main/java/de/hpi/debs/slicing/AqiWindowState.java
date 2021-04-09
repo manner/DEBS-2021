@@ -22,6 +22,10 @@ public class AqiWindowState {
         this.executionMode = 0;
     }
 
+    public int getCheckpoint() {
+        return checkpoint;
+    }
+
     public String getCity() {
         return city;
     }
