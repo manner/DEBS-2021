@@ -49,6 +49,15 @@ public class BatchProcessor extends ProcessOperator<Batch, MeasurementOwn> {
         locationsMap.put(Tuple2.of(m.getLatitude(), m.getLongitude()), city);
     }
 
+    private boolean notInGermanyPrefilter(float lat, float lon) {
+        if (lat <= 55.058638888888886) // Halbinsel Ellenbogen
+            if (lat >= 47.27166666666667) // Grenzstein 147
+                if (lon >= 5.866944444444445) // Isenbruch
+                    return lon <= 15.043611111111112; // Neiszeaue
+
+        return false;
+    }
+
     @Override
     public void open() throws IOException {
         this.locationRetriever = new LocationRetriever(locations);
@@ -75,6 +84,8 @@ public class BatchProcessor extends ProcessOperator<Batch, MeasurementOwn> {
         Optional<String> optionalCity;
 
         for (Measurement measurement : currentYearList) {
+            if (notInGermanyPrefilter(measurement.getLatitude(), measurement.getLongitude()))
+                continue;
             String city = getCachedLocation(measurement);
             if (city == null) {
                 optionalCity = locationRetriever.findCityForMeasurement(measurement);
@@ -97,6 +108,8 @@ public class BatchProcessor extends ProcessOperator<Batch, MeasurementOwn> {
         }
 
         for (Measurement measurement : lastYearList) {
+            if (notInGermanyPrefilter(measurement.getLatitude(), measurement.getLongitude()))
+                continue;
             String city = getCachedLocation(measurement);
             if (city == null) {
                 optionalCity = locationRetriever.findCityForMeasurement(measurement);
