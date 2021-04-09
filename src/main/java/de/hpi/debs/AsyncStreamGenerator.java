@@ -22,6 +22,7 @@ import java.util.concurrent.Executors;
 public class AsyncStreamGenerator extends RichAsyncFunction<Long, Batch> {
 
     private final Benchmark benchmark;
+    private boolean isStarted;
     private ListeningExecutorService executor;
     private ManagedChannel channel;
     private ChallengerGrpc.ChallengerFutureStub challengeClient;
@@ -29,6 +30,7 @@ public class AsyncStreamGenerator extends RichAsyncFunction<Long, Batch> {
 
     AsyncStreamGenerator(Benchmark benchmark) {
         this.benchmark = benchmark;
+        this.isStarted = false;
     }
 
     @Override
@@ -52,6 +54,11 @@ public class AsyncStreamGenerator extends RichAsyncFunction<Long, Batch> {
 
     @Override
     public void asyncInvoke(Long input, ResultFuture<Batch> resultFuture) {
+        if (!isStarted) {
+            System.out.println("starting Benchmark");
+            challengeClient.startBenchmark(benchmark);
+            isStarted = true;
+        }
         ListenableFuture<Batch> listenableFuture = challengeClient.nextBatch(benchmark);
 
         Futures.addCallback(listenableFuture, new FutureCallback<>() {

@@ -147,8 +147,6 @@ public class Main {
                 ).setParallelism(1);
 
         //Start the benchmark
-        System.out.println(blockingChallengeClient.startBenchmark(benchmark));
-        System.out.println("started Benchmark");
         env.execute("benchmark");
         System.out.println(blockingChallengeClient.endBenchmark(benchmark));
         System.out.println("ended Benchmark");
