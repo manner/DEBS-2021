@@ -25,6 +25,8 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
     private final long benchmarkId;
     protected ListState<AQIImprovement> improvementsState;
     private int seqCounter;
+    private ChallengerGrpc.ChallengerFutureStub challengeClient;
+    private ManagedChannel channel;
 
     public AQITop50ImprovementsOperator(long benchmarkId) {
         super(new ProcessFunction<>() {
@@ -45,6 +47,20 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
                         AQIImprovement.class);
 
         improvementsState = getOperatorStateBackend().getListState(descriptor);
+
+        channel = ManagedChannelBuilder
+                .forAddress("challenge.msrg.in.tum.de", 5023)
+                .usePlaintext()
+                .build();
+
+        challengeClient = ChallengerGrpc.newFutureStub(channel)
+                .withMaxInboundMessageSize(100 * 1024 * 1024)
+                .withMaxOutboundMessageSize(100 * 1024 * 1024);
+    }
+
+    @Override
+    public void close() throws Exception {
+        channel.shutdownNow();
     }
 
     @Override
@@ -82,16 +98,7 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
                 .setBenchmarkId(benchmarkId)
                 .build();
 
-        ManagedChannel channel = ManagedChannelBuilder
-                .forAddress("challenge.msrg.in.tum.de", 5023)
-                .usePlaintext()
-                .build();
-
-        ChallengerGrpc.newBlockingStub(channel) //for demo, we show the blocking stub
-                .withMaxInboundMessageSize(100 * 1024 * 1024)
-                .withMaxOutboundMessageSize(100 * 1024 * 1024)
-                .resultQ1(result);
-        channel.shutdownNow();
+        challengeClient.resultQ1(result);
         improvementsState.clear();
     }
 
