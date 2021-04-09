@@ -58,6 +58,14 @@ public class Main {
 
         Benchmark benchmark = blockingChallengeClient.createNewBenchmark(bc);
 
+
+        // Remove network latency for local testing
+        Ping ping = blockingChallengeClient.initializeLatencyMeasuring(benchmark);
+        for (int i = 0; i < 10; i++) {
+            ping = blockingChallengeClient.measure(ping);
+        }
+        Empty empty = blockingChallengeClient.endMeasurement(ping);
+
         //long CHECKPOINTING_INTERVAL = Long.parseLong(System.getenv("CHECKPOINTING_INTERVAL"));
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
