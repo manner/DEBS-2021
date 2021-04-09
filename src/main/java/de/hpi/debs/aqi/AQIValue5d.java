@@ -3,6 +3,7 @@ package de.hpi.debs.aqi;
 import java.util.Date;
 
 public class AQIValue5d {
+    private final long seq;
     private final double aqi;
     private final int curAqiP1;
     private final int curAqiP2;
@@ -10,7 +11,8 @@ public class AQIValue5d {
     private final boolean watermark;
     private final String city;
 
-    public AQIValue5d(double aqi, int aqiP1, int aqiP2, long timestamp, boolean watermark, String city) {
+    public AQIValue5d(long seq, double aqi, int aqiP1, int aqiP2, long timestamp, boolean watermark, String city) {
+        this.seq = seq;
         this.aqi = aqi;
         this.curAqiP1 = aqiP1;
         this.curAqiP2 = aqiP2;
@@ -20,12 +22,17 @@ public class AQIValue5d {
     }
 
     public AQIValue5d(AQIValue24h event) {
+        this.seq = event.getSeq();
         this.aqi = event.getAqi();
         this.curAqiP1 = event.getAqiP1();
         this.curAqiP2 = event.getAqiP2();
         this.timestamp = event.getTimestamp();
         this.watermark = event.isWatermark();
         this.city = event.getCity();
+    }
+
+    public long getSeq() {
+        return seq;
     }
 
     public double getAQI() {
@@ -76,10 +83,11 @@ public class AQIValue5d {
     @Override
     public String toString() {
         return "AQIValue5d{" +
-                "AQI=" + aqi +
+                "seq=" + seq +
+                ", AQI=" + aqi +
                 ", curAqiP1=" + curAqiP1 +
                 ", curAqiP2=" + curAqiP2 +
-                ", timestamp=" + new Date(timestamp).toString() +
+                ", timestamp=" + new Date(timestamp) +
                 ", city='" + city + '\'' +
                 ", isWatermark='" + isWatermark() +
                 '}';

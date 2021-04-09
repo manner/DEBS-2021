@@ -134,6 +134,7 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
                     int curAqiP2 = window.getAqiSlice(i).getAqiP2s().get(0);
 
                     output.collect(new StreamRecord<>(new AQIValue5d(
+                            value.getValue().getSeq(),
                             avgAqi,
                             curAqiP1,
                             curAqiP2,
@@ -154,6 +155,7 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
 
             // emit watermark with current 24h averages
             output.collect(new StreamRecord<>(new AQIValue5d(
+                    value.getValue().getSeq(),
                     value.getValue().getAqi(),
                     value.getValue().getAqiP1(),
                     value.getValue().getAqiP2(),

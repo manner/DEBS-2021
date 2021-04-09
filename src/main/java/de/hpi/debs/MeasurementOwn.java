@@ -10,6 +10,7 @@ import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 public class MeasurementOwn implements Serializable {
+    private final long seq;
 
     private final float p1;
     private final float p2;
@@ -22,7 +23,8 @@ public class MeasurementOwn implements Serializable {
     private String city;
     private final boolean isLastYear;
 
-    public MeasurementOwn(float p1, float p2, float latitude, float longitude, long timestamp, String city, boolean watermark, boolean isLastYear) {
+    public MeasurementOwn(long seq, float p1, float p2, float latitude, float longitude, long timestamp, String city, boolean watermark, boolean isLastYear) {
+        this.seq = seq;
         this.p1 = p1;
         this.p2 = p2;
         this.latitude = latitude;
@@ -33,8 +35,9 @@ public class MeasurementOwn implements Serializable {
         this.isLastYear = isLastYear;
     }
 
-    public static MeasurementOwn fromMeasurement(Measurement m, String city) {
+    public static MeasurementOwn fromMeasurement(Measurement m, long seq, String city) {
         return new MeasurementOwn(
+                seq,
                 m.getP1(),
                 m.getP2(),
                 m.getLatitude(),
@@ -45,8 +48,9 @@ public class MeasurementOwn implements Serializable {
                 false);
     }
 
-    public static MeasurementOwn fromMeasurement(Measurement m, String city, long addToTS, boolean isLastYear) {
+    public static MeasurementOwn fromMeasurement(Measurement m, long seq, String city, long addToTS, boolean isLastYear) {
         return new MeasurementOwn(
+                seq,
                 m.getP1(),
                 m.getP2(),
                 m.getLatitude(),
@@ -57,8 +61,9 @@ public class MeasurementOwn implements Serializable {
                 isLastYear);
     }
 
-    public static MeasurementOwn createWatermark(long timestamp, String city) {
+    public static MeasurementOwn createWatermark(long seq, long timestamp, String city) {
         return new MeasurementOwn(
+                seq,
                 0,
                 0,
                 0,
@@ -68,12 +73,6 @@ public class MeasurementOwn implements Serializable {
                 true,
                 false
         );
-    }
-
-    public static List<MeasurementOwn> fromMeasurements(List<Measurement> measurementList) {
-        return measurementList.stream()
-                .map(m -> fromMeasurement(m, "testCity"))
-                .collect(Collectors.toList());
     }
 
     public boolean isLastYear() {
@@ -86,6 +85,10 @@ public class MeasurementOwn implements Serializable {
 
     public boolean isWatermark() {
         return isWatermark;
+    }
+
+    public long getSeq() {
+        return seq;
     }
 
     public String getCity() {
@@ -117,7 +120,8 @@ public class MeasurementOwn implements Serializable {
             return true;
         } else if (o != null && getClass() == o.getClass()) {
             MeasurementOwn that = (MeasurementOwn) o;
-            return this.p1 == that.p1
+            return this.seq  == that.seq
+                    && this.p1 == that.p1
                     && this.p2 == that.p2
                     && this.latitude == that.latitude
                     && this.longitude == that.longitude
@@ -133,6 +137,7 @@ public class MeasurementOwn implements Serializable {
     public String toString() {
         return "MeasurementOwn{" +
                 (isLastYear() ? "lastYear" : "currentYear") +
+                ", seq=" + seq +
                 ", p1=" + p1 +
                 ", p2=" + p2 +
                 ", latitude=" + latitude +

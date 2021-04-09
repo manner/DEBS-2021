@@ -3,6 +3,7 @@ package de.hpi.debs.aqi;
 import java.util.Date;
 
 public class AQIValue24h {
+    private final long seq;
     private final int aqi;
     private final int aqiP1;
     private final int aqiP2;
@@ -10,13 +11,18 @@ public class AQIValue24h {
     private final boolean watermark;
     private final String city;
 
-    public AQIValue24h(int aqi, int aqiP1, int aqiP2, long timestamp, boolean watermark, String city) {
+    public AQIValue24h(long seq, int aqi, int aqiP1, int aqiP2, long timestamp, boolean watermark, String city) {
+        this.seq = seq;
         this.aqi = aqi;
         this.aqiP1 = aqiP1;
         this.aqiP2 = aqiP2;
         this.timestamp = timestamp;
         this.watermark = watermark;
         this.city = city;
+    }
+
+    public long getSeq() {
+        return seq;
     }
 
     public int getAqi() {
@@ -68,7 +74,7 @@ public class AQIValue24h {
                 "AQI=" + aqi +
                 ", aqiP1=" + aqiP1 +
                 ", aqiP2=" + aqiP2 +
-                ", timestamp=" + new Date(timestamp).toString() +
+                ", timestamp=" + new Date(timestamp) +
                 ", city='" + city + '\'' +
                 ", isWatermark='" + isWatermark() +
                 '}';

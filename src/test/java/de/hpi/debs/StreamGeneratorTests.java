@@ -168,6 +168,7 @@ public class StreamGeneratorTests {
                         timestamp = (long) (m.getTimestamp().getSeconds() * 1000.0 + m.getTimestamp().getNanos() / 1000.0);
                         if (m.getLatitude() == 51.42F) { // Essen
                             essen = new MeasurementOwn(
+                                    0,
                                     m.getP1(),
                                     m.getP2(),
                                     m.getLatitude(),
@@ -180,6 +181,7 @@ public class StreamGeneratorTests {
                             groundTruth.add(new StreamRecord<>(essen, timestamp));
                         } else { // "Berlin Moabit"
                             berlin = new MeasurementOwn(
+                                    0,
                                     m.getP1(),
                                     m.getP2(),
                                     m.getLatitude(),
@@ -197,27 +199,27 @@ public class StreamGeneratorTests {
                 long watermarkTimestamp = lastMeasurement.getTimestamp().getSeconds() * 1000 + lastMeasurement.getTimestamp().getNanos() / 1000;
                 if (berlin != null) {
                     if (watermarkTimestamp < 31536000000L) {
-                        berlin = MeasurementOwn.createWatermark(watermarkTimestamp, "Berlin Moabit");
+                        berlin = MeasurementOwn.createWatermark(watermarkTimestamp, 0, "Berlin Moabit");
                         groundTruth.add(new StreamRecord<>(berlin, berlin.getTimestamp()));
-                        berlin = MeasurementOwn.createWatermark(watermarkTimestamp + 31536000000L, "Berlin Moabit");
+                        berlin = MeasurementOwn.createWatermark(watermarkTimestamp + 31536000000L, 0, "Berlin Moabit");
                         groundTruth.add(new StreamRecord<>(berlin, berlin.getTimestamp()));
                     } else {
-                        berlin = MeasurementOwn.createWatermark(watermarkTimestamp, "Berlin Moabit");
+                        berlin = MeasurementOwn.createWatermark(watermarkTimestamp, 0, "Berlin Moabit");
                         groundTruth.add(new StreamRecord<>(berlin, berlin.getTimestamp()));
-                        berlin = MeasurementOwn.createWatermark(watermarkTimestamp - 31536000000L, "Berlin Moabit");
+                        berlin = MeasurementOwn.createWatermark(watermarkTimestamp - 31536000000L, 0, "Berlin Moabit");
                         groundTruth.add(new StreamRecord<>(berlin, berlin.getTimestamp()));
                     }
                 }
                 if (essen != null) {
                     if (watermarkTimestamp < 31536000000L) {
-                        essen = MeasurementOwn.createWatermark(watermarkTimestamp, "Essen");
+                        essen = MeasurementOwn.createWatermark(watermarkTimestamp, 0, "Essen");
                         groundTruth.add(new StreamRecord<>(essen, essen.getTimestamp()));
-                        essen = MeasurementOwn.createWatermark(watermarkTimestamp + 31536000000L, "Essen");
+                        essen = MeasurementOwn.createWatermark(watermarkTimestamp + 31536000000L, 0, "Essen");
                         groundTruth.add(new StreamRecord<>(essen, essen.getTimestamp()));
                     } else {
-                        essen = MeasurementOwn.createWatermark(watermarkTimestamp, "Essen");
+                        essen = MeasurementOwn.createWatermark(watermarkTimestamp, 0, "Essen");
                         groundTruth.add(new StreamRecord<>(essen, essen.getTimestamp()));
-                        essen = MeasurementOwn.createWatermark(watermarkTimestamp - 31536000000L, "Essen");
+                        essen = MeasurementOwn.createWatermark(watermarkTimestamp - 31536000000L, 0, "Essen");
                         groundTruth.add(new StreamRecord<>(essen, essen.getTimestamp()));
                     }
                 }

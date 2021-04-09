@@ -34,15 +34,15 @@ public class LongestStreakProcessorTests {
     }
 
     protected ArrayList<StreamRecord<AQIValue24h>> events = new ArrayList<>() {{
-        add(new StreamRecord<>(new AQIValue24h(1, 2, 4, 8000, true, "Poland"), 8000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 2, 4, 8000, true, "Poland"), 8000));
         add(new StreamRecord<>(null, 8000)); // watermarks have data of null
-        add(new StreamRecord<>(new AQIValue24h(1, 2, 4, 16000, true, "Berlin"), 16000));
-        add(new StreamRecord<>(new AQIValue24h(1, 2, 4, 16000, true, "Poland"), 16000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 2, 4, 16000, true, "Berlin"), 16000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 2, 4, 16000, true, "Poland"), 16000));
         add(new StreamRecord<>(null, 16000)); // watermarks have data of null
-        add(new StreamRecord<>(new AQIValue24h(4, 3, 4, 24000, true, "Poland"), 24000));
-        add(new StreamRecord<>(new AQIValue24h(1, 2, 5, 24000, true, "Berlin"), 24000));
+        add(new StreamRecord<>(new AQIValue24h(0, 4, 3, 4, 24000, true, "Poland"), 24000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 2, 5, 24000, true, "Berlin"), 24000));
         add(new StreamRecord<>(null, 24000)); // watermarks have data of null
-        add(new StreamRecord<>(new AQIValue24h(4, 2, 4, 36000, true, "Berlin"), 36000));
+        add(new StreamRecord<>(new AQIValue24h(0, 4, 2, 4, 36000, true, "Berlin"), 36000));
         add(new StreamRecord<>(null, 36000));
     }};
 

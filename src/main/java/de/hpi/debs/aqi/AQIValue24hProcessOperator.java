@@ -124,6 +124,7 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
                     float avgP2 = (float) state.value().getP2Slice(i).getWindowAvg();
 
                     output.collect(new StreamRecord<>(new AQIValue24h(
+                            value.getValue().getSeq(),
                             AQICalculator.getAQI(avgP2, avgP1),
                             AQICalculator.getAQI10(avgP1),
                             AQICalculator.getAQI25(avgP2),
@@ -210,6 +211,7 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
                 float avgP2 = (float) deltaWindowSum2 / deltaWindowCount;
 
                 output.collect(new StreamRecord<>(new AQIValue24h(
+                        value.getValue().getSeq(),
                         AQICalculator.getAQI(avgP2, avgP1),
                         AQICalculator.getAQI10(avgP1),
                         AQICalculator.getAQI25(avgP2),

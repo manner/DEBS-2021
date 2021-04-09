@@ -3,6 +3,7 @@ package de.hpi.debs.aqi;
 import java.util.Date;
 
 public class AQIImprovement implements Comparable<AQIImprovement> {
+    private long seq;
     private double improvement;
     private int curAqiP1;
     private int curAqiP2;
@@ -10,7 +11,8 @@ public class AQIImprovement implements Comparable<AQIImprovement> {
     private String city;
     private boolean isWatermark;
 
-    public AQIImprovement(double improvement, int curAqiP1, int curAqiP2, long timestamp, String city, boolean isWatermark) {
+    public AQIImprovement(long seq, double improvement, int curAqiP1, int curAqiP2, long timestamp, String city, boolean isWatermark) {
+        this.seq = seq;
         this.improvement = improvement;
         this.curAqiP1 = curAqiP1;
         this.curAqiP2 = curAqiP2;
@@ -65,7 +67,7 @@ public class AQIImprovement implements Comparable<AQIImprovement> {
                 "improvement=" + improvement +
                 ", curAqiP1=" + curAqiP1 +
                 ", curAqiP2=" + curAqiP2 +
-                ", timestamp=" + new Date(timestamp).toGMTString() +
+                ", timestamp=" + new Date(timestamp) +
                 ", city='" + city + '\'' +
                 ", isWatermark=" + isWatermark +
                 '}';

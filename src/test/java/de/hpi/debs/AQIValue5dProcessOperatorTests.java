@@ -37,26 +37,26 @@ public class AQIValue5dProcessOperatorTests {
     }
 
     protected ArrayList<StreamRecord<AQIValue24h>> events = new ArrayList<>() {{
-        add(new StreamRecord<>(new AQIValue24h(1, 2, 4, 8000, true, "Poland"), 8000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 2, 4, 8000, true, "Poland"), 8000));
         add(new StreamRecord<>(null, 8000)); // watermarks have data of null
-        add(new StreamRecord<>(new AQIValue24h(1, 2, 4, 16000, true, "Berlin"), 16000));
-        add(new StreamRecord<>(new AQIValue24h(1, 2, 4, 16000, true, "Poland"), 16000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 2, 4, 16000, true, "Berlin"), 16000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 2, 4, 16000, true, "Poland"), 16000));
         add(new StreamRecord<>(null, 16000)); // watermarks have data of null
-        add(new StreamRecord<>(new AQIValue24h(4, 3, 4, 24000, true, "Poland"), 24000));
-        add(new StreamRecord<>(new AQIValue24h(1, 2, 5, 24000, true, "Berlin"), 24000));
+        add(new StreamRecord<>(new AQIValue24h(0, 4, 3, 4, 24000, true, "Poland"), 24000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 2, 5, 24000, true, "Berlin"), 24000));
         add(new StreamRecord<>(null, 24000)); // watermarks have data of null
-        add(new StreamRecord<>(new AQIValue24h(4, 2, 4, 36000, true, "Berlin"), 36000));
+        add(new StreamRecord<>(new AQIValue24h(0, 4, 2, 4, 36000, true, "Berlin"), 36000));
         add(new StreamRecord<>(null, 36000));
     }};
 
     // !attention! only one watermark for last key is emitted for all partitions, in this case we have only one partition
     protected ArrayList<StreamRecord<AQIValue5d>> groundTruth = new ArrayList<>() {{
-        add(new StreamRecord<>(new AQIValue5d(1.0, 2, 4, 8000, true, "Poland"), 8000));
-        add(new StreamRecord<>(new AQIValue5d(1.0, 2, 4, 16000, true, "Berlin"), 16000));
-        add(new StreamRecord<>(new AQIValue5d(1.0, 2, 4, 16000, true, "Poland"), 16000));
-        add(new StreamRecord<>(new AQIValue5d(4.0, 3, 4, 24000, true, "Poland"), 24000));
-        add(new StreamRecord<>(new AQIValue5d(1.0, 2, 5, 24000, true, "Berlin"), 24000));
-        add(new StreamRecord<>(new AQIValue5d(4.0, 2, 4, 36000, true, "Berlin"), 36000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 2, 4, 8000, true, "Poland"), 8000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 2, 4, 16000, true, "Berlin"), 16000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 2, 4, 16000, true, "Poland"), 16000));
+        add(new StreamRecord<>(new AQIValue5d(0, 4.0, 3, 4, 24000, true, "Poland"), 24000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 2, 5, 24000, true, "Berlin"), 24000));
+        add(new StreamRecord<>(new AQIValue5d(0, 4.0, 2, 4, 36000, true, "Berlin"), 36000));
     }};
 
     @Test
@@ -82,7 +82,7 @@ public class AQIValue5dProcessOperatorTests {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            assertEquals("testRun failed with error message: " + e.toString(), "");
+            assertEquals("testRun failed with error message: " + e, "");
         }
 
         int i = 0;
@@ -101,73 +101,73 @@ public class AQIValue5dProcessOperatorTests {
 
     // next test
     protected ArrayList<StreamRecord<AQIValue24h>> events2 = new ArrayList<>() {{
-        add(new StreamRecord<>(new AQIValue24h(1, 2, 4, 8000, true, "Poland"), 8000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 2, 4, 8000, true, "Poland"), 8000));
         add(new StreamRecord<>(null, 8000)); // watermarks have data of null
-        add(new StreamRecord<>(new AQIValue24h(1, 2, 4, 16000, true, "Berlin"), 16000));
-        add(new StreamRecord<>(new AQIValue24h(1, 2, 4, 16000, true, "Poland"), 16000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 2, 4, 16000, true, "Berlin"), 16000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 2, 4, 16000, true, "Poland"), 16000));
         add(new StreamRecord<>(null, 16000));
-        add(new StreamRecord<>(new AQIValue24h(1, 3, 4, 24000, true, "Poland"), 24000));
-        add(new StreamRecord<>(new AQIValue24h(1, 2, 5, 24000, true, "Berlin"), 24000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 3, 4, 24000, true, "Poland"), 24000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 2, 5, 24000, true, "Berlin"), 24000));
         add(new StreamRecord<>(null, 24000));
-        add(new StreamRecord<>(new AQIValue24h(1, 2, 4, 36000, true, "Berlin"), 36000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 2, 4, 36000, true, "Berlin"), 36000));
         add(new StreamRecord<>(null, 36000));
-        add(new StreamRecord<>(new AQIValue24h(1, 3, 4, 300000, false, "Poland"), 300000));
-        add(new StreamRecord<>(new AQIValue24h(1, 2, 4, 300000, false, "Berlin"), 300000));
-        add(new StreamRecord<>(new AQIValue24h(1, 3, 4, 600000, false, "Poland"), 600000));
-        add(new StreamRecord<>(new AQIValue24h(3, 2, 4, 600000, false, "Berlin"), 600000));
-        add(new StreamRecord<>(new AQIValue24h(1, 3, 4, 600000, true, "Poland"), 600000));
-        add(new StreamRecord<>(new AQIValue24h(2, 2, 5, 600000, true, "Berlin"), 600000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 3, 4, 300000, false, "Poland"), 300000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 2, 4, 300000, false, "Berlin"), 300000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 3, 4, 600000, false, "Poland"), 600000));
+        add(new StreamRecord<>(new AQIValue24h(0, 3, 2, 4, 600000, false, "Berlin"), 600000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 3, 4, 600000, true, "Poland"), 600000));
+        add(new StreamRecord<>(new AQIValue24h(0, 2, 2, 5, 600000, true, "Berlin"), 600000));
         add(new StreamRecord<>(null, 600000));
-        add(new StreamRecord<>(new AQIValue24h(1, 3, 4, 900000, false, "Poland"), 900000));
-        add(new StreamRecord<>(new AQIValue24h(5, 2, 4, 900000, false, "Berlin"), 900000));
-        add(new StreamRecord<>(new AQIValue24h(1, 3, 4, 950000, true, "Poland"), 950000));
-        add(new StreamRecord<>(new AQIValue24h(3, 2, 5, 950000, true, "Berlin"), 950000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 3, 4, 900000, false, "Poland"), 900000));
+        add(new StreamRecord<>(new AQIValue24h(0, 5, 2, 4, 900000, false, "Berlin"), 900000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 3, 4, 950000, true, "Poland"), 950000));
+        add(new StreamRecord<>(new AQIValue24h(0, 3, 2, 5, 950000, true, "Berlin"), 950000));
         add(new StreamRecord<>(null, 950000));
-        add(new StreamRecord<>(new AQIValue24h(1, 3, 4, 1200000, false, "Poland"), 1200000));
-        add(new StreamRecord<>(new AQIValue24h(1, 2, 4, 1200000, false, "Berlin"), 1200000));
-        add(new StreamRecord<>(new AQIValue24h(1, 3, 4, 1250000, true, "Poland"), 1250000));
-        add(new StreamRecord<>(new AQIValue24h(3, 2, 5, 1250000, true, "Berlin"), 1250000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 3, 4, 1200000, false, "Poland"), 1200000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 2, 4, 1200000, false, "Berlin"), 1200000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 3, 4, 1250000, true, "Poland"), 1250000));
+        add(new StreamRecord<>(new AQIValue24h(0, 3, 2, 5, 1250000, true, "Berlin"), 1250000));
         add(new StreamRecord<>(null, 1250000));
-        add(new StreamRecord<>(new AQIValue24h(1, 3, 4, 1500000, false, "Poland"), 1500000));
-        add(new StreamRecord<>(new AQIValue24h(3, 2, 4, 1500000, false, "Berlin"), 1500000));
-        add(new StreamRecord<>(new AQIValue24h(1, 3, 4, 1850000, true, "Poland"), 1850000));
-        add(new StreamRecord<>(new AQIValue24h(3, 2, 5, 1850000, true, "Berlin"), 1850000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 3, 4, 1500000, false, "Poland"), 1500000));
+        add(new StreamRecord<>(new AQIValue24h(0, 3, 2, 4, 1500000, false, "Berlin"), 1500000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 3, 4, 1850000, true, "Poland"), 1850000));
+        add(new StreamRecord<>(new AQIValue24h(0, 3, 2, 5, 1850000, true, "Berlin"), 1850000));
         add(new StreamRecord<>(null, 1850000));
     }};
 
     // !attention! only one watermark for last key is emitted for all partitions, in this case we have only one partition
     protected ArrayList<StreamRecord<AQIValue5d>> groundTruth2 = new ArrayList<>() {{
-        add(new StreamRecord<>(new AQIValue5d(1.0, 2, 4, 8000, true, "Poland"), 8000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 2, 4, 8000, true, "Poland"), 8000));
         add(new StreamRecord<>(null, 8000)); // watermarks have data of null
-        add(new StreamRecord<>(new AQIValue5d(1.0, 2, 4, 16000, true, "Berlin"), 16000));
-        add(new StreamRecord<>(new AQIValue5d(1.0, 2, 4, 16000, true, "Poland"), 16000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 2, 4, 16000, true, "Berlin"), 16000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 2, 4, 16000, true, "Poland"), 16000));
         add(new StreamRecord<>(null, 16000));
-        add(new StreamRecord<>(new AQIValue5d(1.0, 3, 4, 24000, true, "Poland"), 24000));
-        add(new StreamRecord<>(new AQIValue5d(1.0, 2, 5, 24000, true, "Berlin"), 24000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 3, 4, 24000, true, "Poland"), 24000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 2, 5, 24000, true, "Berlin"), 24000));
         add(new StreamRecord<>(null, 24000));
-        add(new StreamRecord<>(new AQIValue5d(1.0, 2, 4, 36000, true, "Berlin"), 36000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 2, 4, 36000, true, "Berlin"), 36000));
         add(new StreamRecord<>(null, 36000));
-        add(new StreamRecord<>(new AQIValue5d(1.0, 3, 4, 300000, false, "Poland"), 300000));
-        add(new StreamRecord<>(new AQIValue5d(1.0, 2, 4, 300000, false, "Berlin"), 300000));
-        add(new StreamRecord<>(new AQIValue5d(1.0, 3, 4, 600000, false, "Poland"), 600000));
-        add(new StreamRecord<>(new AQIValue5d(2.0, 2, 4, 600000, false, "Berlin"), 600000));
-        add(new StreamRecord<>(new AQIValue5d(1.0, 3, 4, 600000, true, "Poland"), 600000));
-        add(new StreamRecord<>(new AQIValue5d(2.0, 2, 5, 600000, true, "Berlin"), 600000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 3, 4, 300000, false, "Poland"), 300000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 2, 4, 300000, false, "Berlin"), 300000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 3, 4, 600000, false, "Poland"), 600000));
+        add(new StreamRecord<>(new AQIValue5d(0, 2.0, 2, 4, 600000, false, "Berlin"), 600000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 3, 4, 600000, true, "Poland"), 600000));
+        add(new StreamRecord<>(new AQIValue5d(0, 2.0, 2, 5, 600000, true, "Berlin"), 600000));
         add(new StreamRecord<>(null, 600000));
-        add(new StreamRecord<>(new AQIValue5d(1.0, 3, 4, 900000, false, "Poland"), 900000));
-        add(new StreamRecord<>(new AQIValue5d(3.0, 2, 4, 900000, false, "Berlin"), 900000));
-        add(new StreamRecord<>(new AQIValue5d(1.0, 3, 4, 950000, true, "Poland"), 950000));
-        add(new StreamRecord<>(new AQIValue5d(3.0, 2, 5, 950000, true, "Berlin"), 950000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 3, 4, 900000, false, "Poland"), 900000));
+        add(new StreamRecord<>(new AQIValue5d(0, 3.0, 2, 4, 900000, false, "Berlin"), 900000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 3, 4, 950000, true, "Poland"), 950000));
+        add(new StreamRecord<>(new AQIValue5d(0, 3.0, 2, 5, 950000, true, "Berlin"), 950000));
         add(new StreamRecord<>(null, 950000));
-        add(new StreamRecord<>(new AQIValue5d(1.0, 3, 4, 1200000, false, "Poland"), 1200000));
-        add(new StreamRecord<>(new AQIValue5d(3.0, 2, 4, 1200000, false, "Berlin"), 1200000));
-        add(new StreamRecord<>(new AQIValue5d(1.0, 3, 4, 1250000, true, "Poland"), 1250000));
-        add(new StreamRecord<>(new AQIValue5d(3.0, 2, 5, 1250000, true, "Berlin"), 1250000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 3, 4, 1200000, false, "Poland"), 1200000));
+        add(new StreamRecord<>(new AQIValue5d(0, 3.0, 2, 4, 1200000, false, "Berlin"), 1200000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 3, 4, 1250000, true, "Poland"), 1250000));
+        add(new StreamRecord<>(new AQIValue5d(0, 3.0, 2, 5, 1250000, true, "Berlin"), 1250000));
         add(new StreamRecord<>(null, 1250000));
-        add(new StreamRecord<>(new AQIValue5d(1.0, 3, 4, 1500000, false, "Poland"), 1500000));
-        add(new StreamRecord<>(new AQIValue5d(3.0, 2, 4, 1500000, false, "Berlin"), 1500000));
-        add(new StreamRecord<>(new AQIValue5d(1.0, 3, 4, 1850000, true, "Poland"), 1850000));
-        add(new StreamRecord<>(new AQIValue5d(3.0, 2, 5, 1850000, true, "Berlin"), 1850000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 3, 4, 1500000, false, "Poland"), 1500000));
+        add(new StreamRecord<>(new AQIValue5d(0, 3.0, 2, 4, 1500000, false, "Berlin"), 1500000));
+        add(new StreamRecord<>(new AQIValue5d(0, 1.0, 3, 4, 1850000, true, "Poland"), 1850000));
+        add(new StreamRecord<>(new AQIValue5d(0, 3.0, 2, 5, 1850000, true, "Berlin"), 1850000));
         add(new StreamRecord<>(null, 1850000));
     }};
 
@@ -194,7 +194,7 @@ public class AQIValue5dProcessOperatorTests {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            assertEquals("testRun failed with error message: " + e.toString(), "");
+            assertEquals("testRun failed with error message: " + e, "");
         }
 
         assertEquals(events2.size(), testHarness.getOutput().size(), "Output has not correct number of events.");
@@ -209,18 +209,19 @@ public class AQIValue5dProcessOperatorTests {
 
     //next test
     protected static ArrayList<StreamRecord<AQIValue24h>> events3 = new ArrayList<>() {{
-        add(new StreamRecord<>(new AQIValue24h(1, 2, 4, 3000, true, "Poland"), 3000));
-        add(new StreamRecord<>(new AQIValue24h(1, 2, 4, 250000, true, "Poland"), 250000));
-        add(new StreamRecord<>(new AQIValue24h(1, 2, 4, 300000, false, "Poland"), 300000));
-        add(new StreamRecord<>(new AQIValue24h(3, 2, 5, 600000, false, "Poland"), 600000));
-        add(new StreamRecord<>(new AQIValue24h(5, 2, 6, 900000, false, "Poland"), 900000));
-        add(new StreamRecord<>(new AQIValue24h(1, 1, 7, 1200000, false, "Poland"), 1200000));
-        add(new StreamRecord<>(new AQIValue24h(6, 2, 8, 1500000, false, "Poland"), 1500000));
-        add(new StreamRecord<>(new AQIValue24h(1, 2, 9, 1750000, true, "Poland"), 1750000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 2, 4, 3000, true, "Poland"), 3000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 2, 4, 250000, true, "Poland"), 250000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 2, 4, 300000, false, "Poland"), 300000));
+        add(new StreamRecord<>(new AQIValue24h(0, 3, 2, 5, 600000, false, "Poland"), 600000));
+        add(new StreamRecord<>(new AQIValue24h(0, 5, 2, 6, 900000, false, "Poland"), 900000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 1, 7, 1200000, false, "Poland"), 1200000));
+        add(new StreamRecord<>(new AQIValue24h(0, 6, 2, 8, 1500000, false, "Poland"), 1500000));
+        add(new StreamRecord<>(new AQIValue24h(0, 1, 2, 9, 1750000, true, "Poland"), 1750000));
         add(new StreamRecord<>(null, 1750000)); // watermarks have data of null
     }};
 
     public static StreamRecord<AQIValue5d> correct = new StreamRecord<>(new AQIValue5d(
+            0,
             -1,
             -1,
             -1,
@@ -356,7 +357,7 @@ public class AQIValue5dProcessOperatorTests {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            assertEquals("testRun failed with error message: " + e.toString(), "");
+            assertEquals("testRun failed with error message: " + e, "");
         }
 
         int size = 0;

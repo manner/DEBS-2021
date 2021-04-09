@@ -8,6 +8,7 @@ public class AQIImprovementProcessor extends ProcessJoinFunction<AQIValue5d, AQI
     public void processElement(AQIValue5d currentYear, AQIValue5d lastYear, Context ctx, Collector<AQIImprovement> out) {
         double improvement = lastYear.getAQI() - currentYear.getAQI();
         out.collect(new AQIImprovement(
+                currentYear.getSeq(),
                 improvement,
                 currentYear.getCurAqiP1(),
                 currentYear.getCurAqiP2(),
