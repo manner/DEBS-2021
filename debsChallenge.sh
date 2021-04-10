@@ -90,9 +90,9 @@ ports="$jobmanagerPort 10018 10019 10020 10021" # last need to be client that ru
 # all editable parameters
 debsApiKey="$DEBS_API_KEY"
 checkpointingInterval=300000
-parallelism=5
+parallelism=25
 numberOfNodes=0
-numberOfTaskSlots=5 # 0 for auto computation
+numberOfTaskSlots=0 # 0 for auto computation
 batchSize=10000
 benchmarkType="Evaluation"
 benchmarkNamePrefix="cluster test run "
@@ -195,7 +195,6 @@ jobmanager.memory.process.size: 1600m
 taskmanager.memory.process.size: 8g
 taskmanager.memory.task.off-heap.size: 1g
 taskmanager.memory.jvm-metaspace.size: 1g
-taskmanager.network.memory.fraction: 0.2
 taskmanager.numberOfTaskSlots: $numberOfTaskSlots
 parallelism.default: $parallelism
 jobmanager.execution.failover-strategy: region"
