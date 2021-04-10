@@ -1,12 +1,8 @@
 package de.hpi.debs;
 
-import com.google.common.util.concurrent.*;
-import io.grpc.stub.StreamObserver;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.streaming.api.datastream.AsyncDataStream;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
 import com.google.protobuf.Empty;
@@ -28,15 +24,11 @@ import de.tum.i13.bandency.Locations;
 import de.tum.i13.bandency.Ping;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneOffset;
 import java.util.*;
-import java.util.concurrent.*;
-
-import static java.lang.Thread.sleep;
 
 public class Main {
 
@@ -74,8 +66,6 @@ public class Main {
         }
         Empty empty = blockingChallengeClient.endMeasurement(ping);
 
-        //long CHECKPOINTING_INTERVAL = Long.parseLong(System.getenv("CHECKPOINTING_INTERVAL"));
-
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         env.getConfig().registerTypeWithKryoSerializer(Batch.class, ProtobufSerializer.class);
@@ -83,6 +73,8 @@ public class Main {
 
         int PARALLELISM = Integer.parseInt(System.getenv("PARALLELISM"));
         env.setParallelism(1); // sets the number of parallel for each instance
+
+        //long CHECKPOINTING_INTERVAL = Long.parseLong(System.getenv("CHECKPOINTING_INTERVAL"));
         //env.enableCheckpointing(CHECKPOINTING_INTERVAL);
 
         // Create a new Benchmark
@@ -96,15 +88,19 @@ public class Main {
         //        1000,
         //        TimeUnit.SECONDS,
         //        10);
-
-        DataStream<Batch> batches = env.addSource(new AsyncSource(benchmark, 30, 1000));
+/*
+        DataStream<Batch> batches = env.addSource(new AsyncSource(benchmark, 10, 10000));
 
         DataStream<MeasurementOwn> cities = batches
                 .transform(
                         "batchProcessor",
                         TypeInformation.of(MeasurementOwn.class),
                         new BatchProcessor(locations)
-                );
+                );*/
+
+        int NR_OF_BATCHES = Integer.parseInt(System.getenv("NR_OF_BATCHES"));
+
+        DataStream<MeasurementOwn> cities = env.addSource(new Source(benchmark, 1000, locations));
 
         DataStream<MeasurementOwn> lastYearCities = cities.filter(MeasurementOwn::isLastYear);
         DataStream<MeasurementOwn> currentYearCities = cities.filter(MeasurementOwn::isCurrentYear);
