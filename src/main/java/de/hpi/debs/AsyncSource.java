@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static java.lang.Thread.sleep;
+
 public class AsyncSource implements SourceFunction<Batch> {
 
     private static ChallengerGrpc.ChallengerStub challengeClient;
@@ -33,21 +35,10 @@ public class AsyncSource implements SourceFunction<Batch> {
 
         benchmark = benchmarkIn;
         numberOfBatches = Long.MAX_VALUE;
-        observer = new StreamObserverOwn(capacity);
         this.capacity = capacity;
         this.seq = 0;
         nextM = capacity;
         requested = 0;
-
-        ManagedChannel channel = ManagedChannelBuilder
-                .forAddress("challenge.msrg.in.tum.de", 5023)
-                .usePlaintext()
-                .build();
-
-        //for demo, we show the blocking stub
-        challengeClient = ChallengerGrpc.newStub(channel) //for demo, we show the blocking stub
-                .withMaxInboundMessageSize(100 * 1024 * 1024)
-                .withMaxOutboundMessageSize(100 * 1024 * 1024);
     }
 
     public AsyncSource(
@@ -58,11 +49,16 @@ public class AsyncSource implements SourceFunction<Batch> {
 
         benchmark = benchmarkIn;
         numberOfBatches = batchNumbersIn;
-        observer = new StreamObserverOwn(capacity, batchNumbersIn);
         this.capacity = capacity;
         this.seq = 0;
         nextM = capacity;
         requested = 0;
+    }
+
+    @Override
+    public void run(SourceContext<Batch> context) throws Exception {
+        observer = new StreamObserverOwn(capacity, numberOfBatches);
+        observer.setContext(context);
 
         ManagedChannel channel = ManagedChannelBuilder
                 .forAddress("challenge.msrg.in.tum.de", 5023)
@@ -74,21 +70,12 @@ public class AsyncSource implements SourceFunction<Batch> {
                 .withMaxInboundMessageSize(100 * 1024 * 1024)
                 .withMaxOutboundMessageSize(100 * 1024 * 1024);
 
-    }
-
-    @Override
-    public void run(SourceContext<Batch> context) throws Exception {
-        observer.setContext(context);
-
-        while (0 <= seq) {
+        while (running && 0 <= seq) {
             for (int i = 0; i < nextM; i++) {
                 challengeClient.nextBatch(benchmark, observer);
             }
 
             status = observer.syncOperations(null, 0, 1);
-
-            if (!running)
-                observer.syncOperations(null, System.currentTimeMillis(), 2);
 
             if (0 <= status) { // regular case compute how many batches are finished and therefore how many more can be requested
                 requested += nextM;
