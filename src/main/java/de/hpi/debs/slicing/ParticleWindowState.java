@@ -9,7 +9,6 @@ public class ParticleWindowState {
     protected int slicesNr;
     protected int checkpoint;
     protected final String city;
-    protected double eventsSum;
     protected int executionMode; // 0 - pre-aggregated window slicing, 1 - slice pre-aggregation only & no window pre-aggregation
 
     public ParticleWindowState(String city, long start, long end) {
@@ -21,7 +20,6 @@ public class ParticleWindowState {
         this.slicesNr = 1;
         this.checkpoint = 0;
         this.city = city;
-        this.eventsSum = 0.0;
         this.executionMode = 0;
     }
 
@@ -77,8 +75,6 @@ public class ParticleWindowState {
     public void addMeasure(int index, float p1, float p2, long ts) {
         slicesP1.get(index).add(p1, ts);
         slicesP2.get(index).add(p2, ts);
-
-        ++eventsSum;
     }
 
     public void addPreAggregate(int index, double sumP1, double sumP2, int count) {
@@ -86,18 +82,15 @@ public class ParticleWindowState {
         slicesP2.get(index).addToWindow(sumP2, count);
 
         ++checkpoint;
-
-        eventsSum += count;
     }
 
     public void removeSlices(long ts) {
         while (!slicesP1.isEmpty() && slicesP1.get(0).getEnd() <= ts) {
-            eventsSum -= slicesP1.get(0).getSum();
-
             slicesP1.remove(0);
             slicesP2.remove(0);
 
             --slicesNr;
+            --checkpoint;
         }
     }
 
@@ -107,6 +100,7 @@ public class ParticleWindowState {
             slicesP2.remove(0);
 
             --slicesNr;
+            --checkpoint;
         }
     }
 
@@ -117,8 +111,8 @@ public class ParticleWindowState {
                 ", slicesP2=" + slicesP2.toString() +
                 ", lastWatermark=" + lastWatermark +
                 ", slicesNr=" + slicesNr +
+                ", checkpoint=" + checkpoint +
                 ", city=" + city +
-                ", eventsSum=" + eventsSum +
                 ", executionMode=" + executionMode +
                 '}';
     }

@@ -72,6 +72,9 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
             if (window == null) // in case no records are processed beforehand
                 return;
 
+            if (window.getCheckpoint() < 0) // window has no slices
+                return;
+
             long wm = value.getTimestamp();
             long lw = window.getLastWatermark();
             window.updateLastWatermark(wm);
@@ -237,6 +240,14 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
         }
 
         if (window == null) {
+            long newStart = (value.getTimestamp() - start) % step;
+            newStart = value.getTimestamp() - newStart; // get correct start of window in case city measures very late
+            window = new ParticleWindowState(
+                    (String) getCurrentKey(),
+                    newStart,
+                    newStart + step
+            );
+        } else if (window.getCheckpoint() < 0) { // no slices in window
             long newStart = (value.getTimestamp() - start) % step;
             newStart = value.getTimestamp() - newStart; // get correct start of window in case city measures very late
             window = new ParticleWindowState(

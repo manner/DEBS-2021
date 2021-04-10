@@ -8,7 +8,6 @@ public class AqiWindowState {
     protected int slicesNr;
     protected int checkpoint;
     protected final String city;
-    protected double eventsSum;
     protected int executionMode; // 0 - pre-aggregated window slicing, 1 - slice pre-aggregation only & no window pre-aggregation
 
     public AqiWindowState(String city, long start, long end) {
@@ -18,7 +17,6 @@ public class AqiWindowState {
         this.slicesNr = 1;
         this.checkpoint = 0;
         this.city = city;
-        this.eventsSum = 0.0;
         this.executionMode = 0;
     }
 
@@ -68,25 +66,20 @@ public class AqiWindowState {
 
     public void addMeasure(int index, double aqi, int aqiP1, int aqiP2, long ts) {
         slicesAqi.get(index).add(aqi, aqiP1, aqiP2, ts);
-
-        ++eventsSum;
     }
 
     public void addPreAggregate(int index, double sumAqi, int count) {
         slicesAqi.get(index).addToWindow(sumAqi, count);
 
         ++checkpoint;
-
-        eventsSum += count;
     }
 
     public void removeSlices(long ts) {
         while (!slicesAqi.isEmpty() && slicesAqi.get(0).getEnd() <= ts) {
-            eventsSum -= slicesAqi.get(0).getSum();
-
             slicesAqi.remove(0);
 
             --slicesNr;
+            --checkpoint;
         }
     }
 
@@ -95,6 +88,7 @@ public class AqiWindowState {
             slicesAqi.remove(0);
 
             --slicesNr;
+            --checkpoint;
         }
     }
 
@@ -105,7 +99,6 @@ public class AqiWindowState {
                 ", lastWatermark=" + lastWatermark +
                 ", slicesNr=" + slicesNr +
                 ", city=" + city +
-                ", eventsSum=" + eventsSum +
                 ", executionMode=" + executionMode +
                 '}';
     }
