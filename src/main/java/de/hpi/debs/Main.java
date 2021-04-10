@@ -100,7 +100,14 @@ public class Main {
 
         int NR_OF_BATCHES = Integer.parseInt(System.getenv("NR_OF_BATCHES"));
 
-        DataStream<MeasurementOwn> cities = env.addSource(new Source(benchmark, 1000, locations));
+        Source source;
+
+        if (NR_OF_BATCHES < 0)
+            source = new Source(benchmark, locations);
+        else
+            source = new Source(benchmark, NR_OF_BATCHES, locations);
+
+        DataStream<MeasurementOwn> cities = env.addSource(source);
 
         DataStream<MeasurementOwn> lastYearCities = cities.filter(MeasurementOwn::isLastYear);
         DataStream<MeasurementOwn> currentYearCities = cities.filter(MeasurementOwn::isCurrentYear);
