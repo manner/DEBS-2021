@@ -166,7 +166,8 @@ public class Source implements SourceFunction<MeasurementOwn> {
             Batch batch =  challengeClient.nextBatch(benchmark);
             processElement(batch, context);
             requested++;
-            if (batchNumbers <= requested)
+
+            if (batch.getLast() || batchNumbers <= requested)
                 running = false;
         }
     }
