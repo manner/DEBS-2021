@@ -80,29 +80,30 @@ public class AsyncSource implements SourceFunction<Batch> {
     public void run(SourceContext<Batch> context) throws Exception {
         observer.setContext(context);
 
-        while (running) {
-            while (0 <= seq) {
-                for (int i = 0; i < nextM; i++) {
-                    challengeClient.nextBatch(benchmark, observer);
-                }
+        while (0 <= seq) {
+            for (int i = 0; i < nextM; i++) {
+                challengeClient.nextBatch(benchmark, observer);
+            }
 
-                status = observer.syncOperations(null, 0, 1);
+            status = observer.syncOperations(null, 0, 1);
 
-                if (0 <= status) { // regular case compute how many batches are finished and therefore how many more can be requested
-                    requested += nextM;
-                    nextM = status - seq;
-                    if (numberOfBatches < requested + nextM)
-                        nextM = numberOfBatches - requested;
-                    seq = status;
-                }
-                else if (status == -2) { // end of data in
-                    nextM = 0;
-                    seq = status;
-                } else if (status == -1) {
-                    nextM = 0;
-                } else { // no more data needed, but a result not equal to -1 is not suppose to happen
-                    throw new Exception("StreamObserverOwn is broken.");
-                }
+            if (!running)
+                observer.syncOperations(null, System.currentTimeMillis(), 2);
+
+            if (0 <= status) { // regular case compute how many batches are finished and therefore how many more can be requested
+                requested += nextM;
+                nextM = status - seq;
+                if (numberOfBatches < requested + nextM)
+                    nextM = numberOfBatches - requested;
+                seq = status;
+            }
+            else if (status == -2) { // end of data in
+                nextM = 0;
+                seq = status;
+            } else if (status == -1) {
+                nextM = 0;
+            } else { // no more data needed, but a result not equal to -1 is not suppose to happen
+                throw new Exception("StreamObserverOwn is broken.");
             }
         }
     }
