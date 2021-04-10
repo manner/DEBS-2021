@@ -1,9 +1,12 @@
 package de.hpi.debs;
 
+import com.google.common.util.concurrent.*;
+import io.grpc.stub.StreamObserver;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.AsyncDataStream;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
 import com.google.protobuf.Empty;
@@ -25,12 +28,15 @@ import de.tum.i13.bandency.Locations;
 import de.tum.i13.bandency.Ping;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneOffset;
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
+
+import static java.lang.Thread.sleep;
 
 public class Main {
 
@@ -76,7 +82,7 @@ public class Main {
         env.getConfig().registerTypeWithKryoSerializer(Locations.class, ProtobufSerializer.class);
 
         int PARALLELISM = Integer.parseInt(System.getenv("PARALLELISM"));
-        env.setParallelism(PARALLELISM); // sets the number of parallel for each instance
+        env.setParallelism(1); // sets the number of parallel for each instance
         //env.enableCheckpointing(CHECKPOINTING_INTERVAL);
 
         // Create a new Benchmark
@@ -84,19 +90,21 @@ public class Main {
 
 //        DataStream<MeasurementOwn> cities = env.addSource(new StreamGenerator(newBenchmark, 3));
 
-        DataStream<Batch> batches = AsyncDataStream.orderedWait(
-                env.fromSequence(0, 300).setParallelism(1),
-                new AsyncStreamGenerator(benchmark),
-                1000,
-                TimeUnit.SECONDS,
-                10).setParallelism(1);
+        //DataStream<Batch> batches = AsyncDataStream.orderedWait(
+        //        env.fromSequence(0, 600),
+        //        new AsyncStreamGenerator(benchmark),
+        //        1000,
+        //        TimeUnit.SECONDS,
+        //        10);
+
+        DataStream<Batch> batches = env.addSource(new AsyncSource(benchmark, 30, 1000));
 
         DataStream<MeasurementOwn> cities = batches
                 .transform(
                         "batchProcessor",
                         TypeInformation.of(MeasurementOwn.class),
                         new BatchProcessor(locations)
-                ).setParallelism(1);
+                );
 
         DataStream<MeasurementOwn> lastYearCities = cities.filter(MeasurementOwn::isLastYear);
         DataStream<MeasurementOwn> currentYearCities = cities.filter(MeasurementOwn::isCurrentYear);
@@ -107,7 +115,7 @@ public class Main {
                         "AQIValue24hProcessOperator",
                         TypeInformation.of(AQIValue24h.class),
                         new AQIValue24hProcessOperator(currentStart)
-                );
+                ).setParallelism(PARALLELISM);
 
         DataStream<AQIValue24h> aqiStreamLastYear = lastYearCities
                 .keyBy(MeasurementOwn::getCity)
@@ -115,7 +123,7 @@ public class Main {
                         "AQIValue24hProcessOperator",
                         TypeInformation.of(AQIValue24h.class),
                         new AQIValue24hProcessOperator(currentStart)
-                );
+                ).setParallelism(PARALLELISM);
 
         DataStream<AQIValue5d> fiveDayStreamCurrentYear = aqiStreamCurrentYear // need more attributes
                 .keyBy(AQIValue24h::getCity)
@@ -123,7 +131,7 @@ public class Main {
                         "AQIValue5dProcessOperator",
                         TypeInformation.of(AQIValue5d.class),
                         new AQIValue5dProcessOperator(currentStart, false)
-                );
+                ).setParallelism(PARALLELISM);
 
         DataStream<AQIValue5d> fiveDayStreamLastYear = aqiStreamLastYear // need more attributes
                 .keyBy(AQIValue24h::getCity)
@@ -131,20 +139,20 @@ public class Main {
                         "AQIValue5dProcessOperator",
                         TypeInformation.of(AQIValue5d.class),
                         new AQIValue5dProcessOperator(currentStart, true)
-                );
+                ).setParallelism(PARALLELISM);
 
         DataStream<AQIImprovement> fiveDayImprovement = fiveDayStreamCurrentYear
                 .keyBy(AQIValue5d::getCity)
                 .intervalJoin(fiveDayStreamLastYear.keyBy(AQIValue5d::getCity))
                 .between(Time.milliseconds(0), Time.milliseconds(0))
-                .process(new AQIImprovementProcessor());
+                .process(new AQIImprovementProcessor()).setParallelism(PARALLELISM);
 
         fiveDayImprovement
                 .transform(
                         "top50cities",
                         TypeInformation.of(Void.class),
                         new AQITop50ImprovementsOperator(benchmark.getId())
-                ).setParallelism(1);
+                );
 
 
         aqiStreamCurrentYear
@@ -154,7 +162,7 @@ public class Main {
                         "histogram",
                         TypeInformation.of(Void.class),
                         new HistogramOperator(benchmark.getId())
-                ).setParallelism(1);
+                );
 
         //Start the benchmark
         env.execute("benchmark");
