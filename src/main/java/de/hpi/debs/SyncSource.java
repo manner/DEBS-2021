@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class Source implements SourceFunction<MeasurementOwn> {
+public class SyncSource implements SourceFunction<MeasurementOwn> {
 
     private static ChallengerGrpc.ChallengerBlockingStub challengeClient;
     private volatile boolean running = true;
@@ -29,7 +29,7 @@ public class Source implements SourceFunction<MeasurementOwn> {
     private final HashMap<String, Long> lastYearCities;
     private final HashMap<Tuple2<Float, Float>, String> locationsMap;
 
-    public Source(
+    public SyncSource(
             Benchmark benchmarkIn,
             long batchNumbersIn,
             Locations locations
@@ -44,7 +44,7 @@ public class Source implements SourceFunction<MeasurementOwn> {
         this.locationsMap = new HashMap<>();
     }
 
-    public Source(Benchmark benchmarkIn, Locations locations) {
+    public SyncSource(Benchmark benchmarkIn, Locations locations) {
 
         benchmark = benchmarkIn;
         batchNumbers = Long.MAX_VALUE;
