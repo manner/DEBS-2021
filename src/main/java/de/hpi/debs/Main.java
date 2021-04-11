@@ -181,7 +181,6 @@ public class Main {
                         new HistogramOperator(benchmark.getId())
                 );
 
-        //Start the benchmark
         env.execute("benchmark");
         System.out.println(blockingChallengeClient.endBenchmark(benchmark));
         System.out.println("ended Benchmark");
