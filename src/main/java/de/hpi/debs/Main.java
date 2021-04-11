@@ -1,8 +1,10 @@
 package de.hpi.debs;
 
+import de.hpi.debs.source.*;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
 import com.google.protobuf.Empty;
@@ -100,14 +102,27 @@ public class Main {
 
         int NR_OF_BATCHES = Integer.parseInt(System.getenv("NR_OF_BATCHES"));
 
-        Source source;
+        DataStream<Batch> test;
 
         if (NR_OF_BATCHES < 0)
-            source = new Source(benchmark, locations);
+            test = env.fromSource(
+                    new SourceOwn(benchmark),
+                    new WatermarkStrategyOwn(),
+                    "BatchSource"
+            );
         else
-            source = new Source(benchmark, NR_OF_BATCHES, locations);
+            test = env.fromSource(
+                    new SourceOwn(benchmark, NR_OF_BATCHES),
+                    new WatermarkStrategyOwn(),
+                    "BatchSource"
+            ).setParallelism(1);
 
-        DataStream<MeasurementOwn> cities = env.addSource(source);
+        DataStream<MeasurementOwn> cities = test
+                .transform(
+                        "batchProcessor",
+                        TypeInformation.of(MeasurementOwn.class),
+                        new BatchProcessor(locations)
+                );
 
         DataStream<MeasurementOwn> lastYearCities = cities.filter(MeasurementOwn::isLastYear);
         DataStream<MeasurementOwn> currentYearCities = cities.filter(MeasurementOwn::isCurrentYear);
