@@ -53,8 +53,7 @@ public class SourceReaderOwn implements SourceReader<Batch, SourceSplitOwn> {
         Batch batch = null;
 
         if (startup) {
-            System.out.println("starting Benchmark");
-            System.out.println(challengeClient.startBenchmark(benchmark));
+            challengeClient.startBenchmark(benchmark);
             startup = false;
         }
 

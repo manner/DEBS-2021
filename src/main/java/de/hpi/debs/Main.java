@@ -75,8 +75,9 @@ public class Main {
         int PARALLELISM = Integer.parseInt(System.getenv("PARALLELISM"));
         env.setParallelism(1); // sets the number of parallel for each instance
 
-        //long CHECKPOINTING_INTERVAL = Long.parseLong(System.getenv("CHECKPOINTING_INTERVAL"));
-        //env.enableCheckpointing(CHECKPOINTING_INTERVAL);
+        long CHECKPOINTING_INTERVAL = Long.parseLong(System.getenv("CHECKPOINTING_INTERVAL"));
+        if (0 < CHECKPOINTING_INTERVAL)
+            env.enableCheckpointing(CHECKPOINTING_INTERVAL);
 
         // Create a new Benchmark
         Locations locations = LocationSerializer.getLocations(blockingChallengeClient, benchmark);
@@ -182,7 +183,7 @@ public class Main {
                 );
 
         env.execute("benchmark");
-        System.out.println(blockingChallengeClient.endBenchmark(benchmark));
+        blockingChallengeClient.endBenchmark(benchmark);
         System.out.println("ended Benchmark");
 
         channel.shutdown();
