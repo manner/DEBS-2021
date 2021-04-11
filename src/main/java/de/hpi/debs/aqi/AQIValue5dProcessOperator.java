@@ -124,23 +124,6 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
                     }
                 }
 
-                if (!window.getAqiSlice(i).isEmpty() && lw < curWindowEnd) {
-                    double avgAqi = window.getAqiSlice(i).getWindowAvg();
-                    int curAqiP1 = window.getAqiSlice(i).getAqiP1s().get(0);
-                    int curAqiP2 = window.getAqiSlice(i).getAqiP2s().get(0);
-
-                    output.collect(new StreamRecord<>(new AQIValue5d(
-                            value.getValue().getSeq(),
-                            avgAqi,
-                            curAqiP1,
-                            curAqiP2,
-                            curWindowEnd,
-                            false,
-                            (String) getCurrentKey()),
-                            curWindowEnd
-                    ));
-                }
-
                 ++i;
 
                 if (i == window.getSlicesNr()) // check if there where events received in the past v5minInSec
