@@ -89,7 +89,7 @@ jobmanagerPort=10017
 ports="$jobmanagerPort 10018 10019 10020 10021" # last need to be client that runs jar
 # all editable parameters
 debsApiKey="$DEBS_API_KEY"
-checkpointingInterval=300000
+checkpointingInterval=180000
 parallelism=25
 numberOfNodes=0
 numberOfTaskSlots=0 # 0 for auto computation
