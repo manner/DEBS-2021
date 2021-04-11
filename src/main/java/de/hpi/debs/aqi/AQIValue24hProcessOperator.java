@@ -73,7 +73,7 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
                 MeasurementOwn mValue = value.getValue();
                 output.collect(new StreamRecord<>(new AQIValue24h(
                         mValue.getSeq(),
-                        AQICalculator.getAQI(mValue.getP2(), mValue.getP1()),
+                        -1,
                         AQICalculator.getAQI10(mValue.getP1()),
                         AQICalculator.getAQI25(mValue.getP2()),
                         mValue.getTimestamp(),
