@@ -61,6 +61,9 @@ public class BatchProcessor extends ProcessOperator<Batch, MeasurementOwn> {
         List<Measurement> lastYearList = batch.getValue().getLastyearList();
         Measurement lastMeasurement;
         long watermarkTimestamp;
+        if (currentYearList.isEmpty() && lastYearList.isEmpty())
+            return;
+
         if (currentYearList.isEmpty()) {
             lastMeasurement = lastYearList.get(lastYearList.size() - 1);
             watermarkTimestamp = lastMeasurement.getTimestamp().getSeconds() * 1000;
