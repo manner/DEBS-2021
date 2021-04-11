@@ -16,6 +16,9 @@ import de.tum.i13.bandency.TopKStreaks;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
+import java.time.LocalDateTime;
+import java.time.Month;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -95,7 +98,7 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
     }
 
     private int getBucketSize(long watermarkTimestamp) {
-        long firstTimestampInBatch = 1583020800000L; // TODO: FIX THIS!
+        long firstTimestampInBatch = LocalDateTime.of(2020, Month.APRIL, 1, 0, 0).toEpochSecond(ZoneOffset.UTC) * 1000;
         long bucketSize = Math.max(0, (watermarkTimestamp - firstTimestampInBatch) / 14);
         long maxBucketSize = Time.days(7).toMilliseconds() / 14;
         return (int) Math.min(bucketSize, maxBucketSize);
