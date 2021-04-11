@@ -94,6 +94,7 @@ parallelism=25
 numberOfNodes=0
 numberOfTaskSlots=0 # 0 for auto computation
 batchSize=10000
+nrOfBatches="-1"
 benchmarkType="Evaluation"
 benchmarkNamePrefix="cluster test run "
 for i in $ports; do
@@ -181,6 +182,9 @@ if [ -z "$PARALLELISM" ]; then
 fi
 if [ -z "$BATCH_SIZE" ]; then
   export BATCH_SIZE="$batchSize"
+fi
+if [ -z "$NR_OF_BATCHES" ]; then
+  export NR_OF_BATCHES="$nrOfBatches"
 fi
 if [ -z "$BENCHMARK_TYPE" ]; then
   export BENCHMARK_TYPE="$benchmarkType"
