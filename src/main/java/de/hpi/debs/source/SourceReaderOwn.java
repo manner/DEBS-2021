@@ -19,6 +19,7 @@ public class SourceReaderOwn implements SourceReader<Batch, SourceSplitOwn> {
     protected final long batchNumbers;
     protected final Benchmark benchmark;
     protected List<SourceSplitOwn> snapshotState;
+    protected boolean startup;
     protected boolean end;
 
     public SourceReaderOwn(
@@ -31,6 +32,7 @@ public class SourceReaderOwn implements SourceReader<Batch, SourceSplitOwn> {
         this.batchNumbers = batchNumbers;
         this.snapshotState = null;
         this.end = false;
+        this.startup = true;
     }
 
     @Override
@@ -49,6 +51,12 @@ public class SourceReaderOwn implements SourceReader<Batch, SourceSplitOwn> {
     @Override
     public InputStatus pollNext(ReaderOutput<Batch> output) {
         Batch batch = null;
+
+        if (startup) {
+            System.out.println("starting Benchmark");
+            System.out.println(challengeClient.startBenchmark(benchmark));
+            startup = false;
+        }
 
         if (!end) {
             batch = challengeClient.nextBatch(benchmark);
