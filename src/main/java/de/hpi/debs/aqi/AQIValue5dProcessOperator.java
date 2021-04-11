@@ -1,10 +1,8 @@
 package de.hpi.debs.aqi;
 
 import de.hpi.debs.slicing.AqiWindowState;
-import de.hpi.debs.slicing.ParticleWindowState;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
-import org.apache.flink.api.common.time.Time;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.operators.KeyedProcessOperator;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
@@ -87,13 +85,8 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
         if (window != null && value.getTimestamp() < window.getLastWatermark()) // ignore late events
             return;
 
-        if (value.getValue().isWatermark()) { // emit results on watermark arrival
-            if (window == null) { // in case no records are processed beforehand watermark has all values
-                output.collect(new StreamRecord<>(new AQIValue5d(value.getValue()), value.getTimestamp()));
-                return;
-            }
-
-            if (window.getCheckpoint() < 0) { // window has no slices
+        if (value.getValue().isWatermark()) { // emit results on watermark arrival or window has no slices pass watermark through
+            if (window == null || window.getCheckpoint() < 0) { // in case no records are processed beforehand watermark has all values
                 output.collect(new StreamRecord<>(new AQIValue5d(value.getValue()), value.getTimestamp()));
                 return;
             }

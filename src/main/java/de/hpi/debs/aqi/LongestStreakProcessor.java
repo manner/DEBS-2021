@@ -20,11 +20,14 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
 
     @Override
     public void processElement(AQIValue24h aqiValue, Context ctx, Collector<Streak> out) throws Exception {
+        // TODO: Handle early elements and store them and discard late events
         Streak streak = streakValueState.value();
 
         if (streak == null) {
-            streak = new Streak(aqiValue.getCity());
+            streak = new Streak(aqiValue.getSeq(), aqiValue.getCity());
             streakValueState.update(streak);
+        } else {
+            streak.updateSeq(aqiValue.getSeq());
         }
 
         if (aqiValue.isGood()) {

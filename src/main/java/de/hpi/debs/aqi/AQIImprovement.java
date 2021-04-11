@@ -21,6 +21,10 @@ public class AQIImprovement implements Comparable<AQIImprovement> {
         this.isWatermark = isWatermark;
     }
 
+    public long getSeq() {
+        return seq;
+    }
+
     public boolean isWatermark() {
         return isWatermark;
     }
@@ -64,13 +68,14 @@ public class AQIImprovement implements Comparable<AQIImprovement> {
     @Override
     public String toString() {
         return "AQIImprovement{" +
-                "improvement=" + improvement +
+                "seq=" + seq +
+                ", improvement=" + improvement +
                 ", curAqiP1=" + curAqiP1 +
                 ", curAqiP2=" + curAqiP2 +
                 ", timestamp=" + new Date(timestamp) +
-                ", city='" + city + '\'' +
+                ", city='" + city + "'" +
                 ", isWatermark=" + isWatermark +
-                '}';
+                "}";
     }
 
     @Override

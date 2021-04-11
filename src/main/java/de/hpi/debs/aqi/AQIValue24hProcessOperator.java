@@ -69,11 +69,21 @@ public class AQIValue24hProcessOperator extends KeyedProcessOperator<String, Mea
             return;
 
         if (value.getValue().isWatermark()) { // emit results on watermark arrival
-            if (window == null) // in case no records are processed beforehand
-                return;
+            if (window == null || window.getCheckpoint() < 0) { // in case no records are processed beforehand or window has no slices pass through watermark
+                MeasurementOwn mValue = value.getValue();
+                output.collect(new StreamRecord<>(new AQIValue24h(
+                        mValue.getSeq(),
+                        AQICalculator.getAQI(mValue.getP2(), mValue.getP1()),
+                        AQICalculator.getAQI10(mValue.getP1()),
+                        AQICalculator.getAQI25(mValue.getP2()),
+                        mValue.getTimestamp(),
+                        mValue.isWatermark(),
+                        (String) getCurrentKey()),
+                        mValue.getTimestamp()
+                ));
 
-            if (window.getCheckpoint() < 0) // window has no slices
                 return;
+            }
 
             long wm = value.getTimestamp();
             long lw = window.getLastWatermark();

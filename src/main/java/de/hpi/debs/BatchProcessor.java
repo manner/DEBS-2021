@@ -87,7 +87,11 @@ public class BatchProcessor extends ProcessOperator<Batch, MeasurementOwn> {
             if (city.equals(NOT_AVAILABLE)) {
                 continue;
             }
-            MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, 0, city);
+            MeasurementOwn m = MeasurementOwn.fromMeasurement(
+                    measurement,
+                    batch.getValue().getSeqId(),
+                    city
+            );
 
             Long lastTimestamp = cities.get(city);
             if (lastTimestamp == null) {
@@ -108,7 +112,13 @@ public class BatchProcessor extends ProcessOperator<Batch, MeasurementOwn> {
             if (city.equals(NOT_AVAILABLE)) {
                 continue;
             }
-            MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, 0, city, A_YEAR, true);
+            MeasurementOwn m = MeasurementOwn.fromMeasurement(
+                    measurement,
+                    batch.getValue().getSeqId(),
+                    city,
+                    A_YEAR,
+                    true
+            );
 
             Long lastTimestamp = lastYearCities.get(city);
             if (lastTimestamp == null) {
@@ -125,7 +135,17 @@ public class BatchProcessor extends ProcessOperator<Batch, MeasurementOwn> {
 
             // check if city is active
             if (lastTimestampOfCity >= watermarkTimestamp - Time.minutes(10).toMilliseconds()) {
-                MeasurementOwn watermark = new MeasurementOwn(0, 0, 0, 0, 0, watermarkTimestamp, city.getKey(), true, false);
+                MeasurementOwn watermark = new MeasurementOwn(
+                        batch.getValue().getSeqId(),
+                        0,
+                        0,
+                        0,
+                        0,
+                        watermarkTimestamp,
+                        city.getKey(),
+                        true,
+                        false
+                );
                 output.collect(new StreamRecord<>(watermark, watermark.getTimestamp()));
             }
         }
@@ -136,7 +156,17 @@ public class BatchProcessor extends ProcessOperator<Batch, MeasurementOwn> {
 
             // check if city is active
             if (lastTimestampOfCity >= watermarkTimestamp - Time.minutes(10).toMilliseconds()) {
-                MeasurementOwn watermark = new MeasurementOwn(0, 0, 0, 0, 0, watermarkTimestamp, city.getKey(), true, true);
+                MeasurementOwn watermark = new MeasurementOwn(
+                        batch.getValue().getSeqId(),
+                        0,
+                        0,
+                        0,
+                        0,
+                        watermarkTimestamp,
+                        city.getKey(),
+                        true,
+                        true
+                );
                 output.collect(new StreamRecord<>(watermark, watermark.getTimestamp()));
             }
         }

@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement, Void> {
+    private long seq;
     private static final int limit = 50;
     private final long benchmarkId;
     protected ListState<AQIImprovement> improvementsState;
@@ -37,6 +38,7 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
                 // do nothing as we are doing everything in the operator
             }
         });
+        this.seq = 0;
         this.benchmarkId = benchmarkId;
         this.seqCounter = 0;
     }
@@ -70,7 +72,9 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
 
     @Override
     public void processElement(StreamRecord<AQIImprovement> value) throws Exception {
+        // TODO: Handle early elements and store them and discard late events
         improvementsState.add(value.getValue());
+        seq = value.getValue().getSeq();
     }
 
     @Override
@@ -101,7 +105,7 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
         resultBuilder.clear();
         ResultQ1 result = resultBuilder
                 .addAllTopkimproved(topKCities)
-                .setBatchSeqId(seqCounter++) // TODO: FIX THIS!
+                .setBatchSeqId(seq)//seqCounter++)
                 .setBenchmarkId(benchmarkId)
                 .build();
 

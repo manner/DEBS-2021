@@ -49,37 +49,37 @@ public class LongestStreakProcessorTests {
     // !attention! only one watermark for last key is emitted for all partitions, in this case we have only one partition
     protected ArrayList<StreamRecord<Streak>> groundTruth = new ArrayList<>() {{
         add(new StreamRecord<>(
-                new Streak("Poland") {{
+                new Streak(0, "Poland") {{
                     setTimestampLastMeasurement(8000L);
                     startStreak(8000L);
                 }},
                 8000));
         add(new StreamRecord<>(
-                new Streak("Berlin") {{
+                new Streak(0, "Berlin") {{
                     setTimestampLastMeasurement(16000L);
                     startStreak(16000L);
                 }},
                 16000));
         add(new StreamRecord<>(
-                new Streak("Poland") {{
+                new Streak(0, "Poland") {{
                     setTimestampLastMeasurement(16000L);
                     startStreak(8000L);
                 }},
                 16000));
         add(new StreamRecord<>(
-                new Streak("Poland") {{
+                new Streak(0, "Poland") {{
                     setTimestampLastMeasurement(24000L);
                     startStreak(8000L);
                 }},
                 16000));
         add(new StreamRecord<>(
-                new Streak("Berlin") {{
+                new Streak(0, "Berlin") {{
                     setTimestampLastMeasurement(24000L);
                     startStreak(16000L);
                 }},
                 16000));
         add(new StreamRecord<>(
-                new Streak("Berlin") {{
+                new Streak(0, "Berlin") {{
                     setTimestampLastMeasurement(36000L);
                     startStreak(16000L);
                 }},

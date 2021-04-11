@@ -24,6 +24,7 @@ import java.util.Map;
 public class HistogramOperator extends ProcessOperator<Streak, Void> {
 
     private final long benchmarkId;
+    private long seq;
     protected ListState<Streak> streaks;
     private int seqCounter;
     private ChallengerGrpc.ChallengerFutureStub challengeClient;
@@ -70,7 +71,9 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
 
     @Override
     public void processElement(StreamRecord<Streak> value) throws Exception {
+        // TODO: Handle early elements and store them and discard late events
         streaks.add(value.getValue());
+        this.seq = value.getValue().getSeq();
     }
 
     @Override
@@ -83,7 +86,7 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
         resultBuilder.clear();
         ResultQ2 result = resultBuilder
                 .addAllHistogram(topKStreaks)
-                .setBatchSeqId(seqCounter++) // TODO: FIX THIS!
+                .setBatchSeqId(seq)//seqCounter++) // TODO: FIX THIS!
                 .setBenchmarkId(benchmarkId)
                 .build();
 

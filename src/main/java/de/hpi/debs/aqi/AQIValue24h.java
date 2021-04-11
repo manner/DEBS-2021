@@ -3,7 +3,7 @@ package de.hpi.debs.aqi;
 import java.util.Date;
 
 public class AQIValue24h {
-    private final long seq;
+    private long seq;
     private final int aqi;
     private final int aqiP1;
     private final int aqiP2;

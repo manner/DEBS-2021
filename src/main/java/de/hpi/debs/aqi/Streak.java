@@ -6,17 +6,27 @@ import java.io.Serializable;
 import java.util.Optional;
 
 public class Streak implements Serializable {
+    private long seq;
     private long timestampLastMeasurement;
     private Optional<Long> timestampSinceGoodAQI;
     private String city;
 
-    public Streak(String city) {
+    public Streak(long seq, String city) {
+        this.seq = seq;
         this.city = city;
         this.timestampSinceGoodAQI = Optional.empty();
     }
 
     public void setTimestampLastMeasurement(long timestampLastMeasurement) {
         this.timestampLastMeasurement = timestampLastMeasurement;
+    }
+
+    public long getSeq() {
+        return seq;
+    }
+
+    public void updateSeq(long seq) {
+        this.seq = seq;
     }
 
     public Integer getBucket(long watermarkTimestamp, int bucketSize) {
@@ -59,9 +69,10 @@ public class Streak implements Serializable {
     @Override
     public String toString() {
         return "Streak{" +
-                "timestampLastMeasurement=" + timestampLastMeasurement +
+                "seq=" + seq +
+                ", timestampLastMeasurement=" + timestampLastMeasurement +
                 ", timestampSinceGoodAQI=" + timestampSinceGoodAQI +
-                ", city='" + city + '\'' +
-                '}';
+                ", city='" + city + "'" +
+                "}";
     }
 }
