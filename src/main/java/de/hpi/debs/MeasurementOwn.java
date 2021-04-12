@@ -5,9 +5,7 @@ import de.tum.i13.bandency.Measurement;
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
 
 public class MeasurementOwn implements Serializable {
     private final long seq;
@@ -22,6 +20,7 @@ public class MeasurementOwn implements Serializable {
     private boolean isWatermark;
     private String city;
     private final boolean isLastYear;
+    private boolean isLastWatermarkOfBatch;
 
     public MeasurementOwn(long seq, float p1, float p2, float latitude, float longitude, long timestamp, String city, boolean watermark, boolean isLastYear) {
         this.seq = seq;
@@ -33,6 +32,7 @@ public class MeasurementOwn implements Serializable {
         this.city = city;
         this.isWatermark = watermark;
         this.isLastYear = isLastYear;
+        this.isLastWatermarkOfBatch = false;
     }
 
     public static MeasurementOwn fromMeasurement(Measurement m, long seq, String city) {
@@ -73,6 +73,14 @@ public class MeasurementOwn implements Serializable {
                 true,
                 false
         );
+    }
+
+    public void setLastWatermarkOfBatch() {
+        this.isLastWatermarkOfBatch = true;
+    }
+
+    public boolean isLastWatermarkOfBatch() {
+        return this.isLastWatermarkOfBatch;
     }
 
     public boolean isLastYear() {

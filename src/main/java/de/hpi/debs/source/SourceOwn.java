@@ -1,23 +1,28 @@
 package de.hpi.debs.source;
 
+import de.hpi.debs.MeasurementOwn;
 import de.tum.i13.bandency.Batch;
 import de.tum.i13.bandency.Benchmark;
+import de.tum.i13.bandency.Locations;
 import org.apache.flink.api.connector.source.*;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.runtime.checkpoint.CheckpointType;
 
-public class SourceOwn implements Source<Batch, SourceSplitOwn, CheckpointType> {
+public class SourceOwn implements Source<MeasurementOwn, SourceSplitOwn, CheckpointType> {
     protected Benchmark benchmark;
+    protected Locations locations;
     protected long batchNumbers;
     protected SplitEnumerator<SourceSplitOwn, CheckpointType> splitEnumerator;
 
-    public SourceOwn(Benchmark benchmark, long batchNumbers) {
+    public SourceOwn(Benchmark benchmark, Locations locations, long batchNumbers) {
         this.benchmark = benchmark;
+        this.locations = locations;
         this.batchNumbers = batchNumbers;
     }
 
-    public SourceOwn(Benchmark benchmark) {
+    public SourceOwn(Benchmark benchmark, Locations locations) {
         this.benchmark = benchmark;
+        this.locations = locations;
         this.batchNumbers = Long.MAX_VALUE;
     }
 
@@ -27,8 +32,8 @@ public class SourceOwn implements Source<Batch, SourceSplitOwn, CheckpointType> 
     }
 
     @Override
-    public SourceReader<Batch, SourceSplitOwn> createReader(SourceReaderContext readerContext) {
-        return new SourceReaderOwn(readerContext, benchmark, batchNumbers);
+    public SourceReader<MeasurementOwn, SourceSplitOwn> createReader(SourceReaderContext readerContext) {
+        return new SourceReaderOwn(readerContext, benchmark, locations, batchNumbers);
     }
 
     @Override
