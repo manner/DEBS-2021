@@ -55,14 +55,12 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
             int size = this.size();
             AQIValue24h aqi;
 
-            if (i < size) {
+            while (i < size) {
                 aqi = this.get(i);
-            } else {
-                lastWatermark = wm;
-                return;
-            }
-
-            while (i < size && aqi.getTimestamp() <= wm) {
+                if (!(aqi.getTimestamp() <= wm)) {
+                    break;
+                }
+                
                 streak.setTimestampLastMeasurement(aqi.getTimestamp());
                 streak.updateSeq(aqi.getSeq());
                 if (aqi.isGood()) {
@@ -78,9 +76,7 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
                     i -= this.clean(i);
                     size = this.size();
                 }
-
                 i++;
-                aqi = this.get(i);
             }
 
             lastWatermark = wm;
