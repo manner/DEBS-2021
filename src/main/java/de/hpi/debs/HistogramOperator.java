@@ -47,6 +47,7 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
 
     @Override
     public void open() throws Exception {
+        streaks = new ArrayList<>();
         channel = ManagedChannelBuilder
                 .forAddress("challenge.msrg.in.tum.de", 5023)
                 .usePlaintext()
