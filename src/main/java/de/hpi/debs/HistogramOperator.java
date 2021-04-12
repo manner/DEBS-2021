@@ -27,13 +27,13 @@ import java.util.Map;
 public class HistogramOperator extends ProcessOperator<Streak, Void> {
 
     private final long benchmarkId;
-    private long seq;
     protected ListState<Streak> streaks;
     private int seqCounter;
     private ChallengerGrpc.ChallengerFutureStub challengeClient;
     private ManagedChannel channel;
     private TopKStreaks.Builder topKStreaksBuilder;
     private ResultQ2.Builder resultBuilder;
+    private long lastWatermark;
 
     public HistogramOperator(long benchmarkId) {
         super(new ProcessFunction<>() {
@@ -44,6 +44,7 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
         });
         this.benchmarkId = benchmarkId;
         this.seqCounter = 0;
+        this.lastWatermark = Long.MIN_VALUE;
     }
 
     @Override
@@ -69,14 +70,19 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
 
     @Override
     public void close() throws Exception {
-        channel.shutdownNow();
+        channel.shutdown();
     }
 
     @Override
     public void processElement(StreamRecord<Streak> value) throws Exception {
-        // TODO: Handle early elements and store them and discard late events
+        Streak streak = value.getValue();
+
+        // late events should be discarded
+        if (streak.getTimestampLastMeasurement() < lastWatermark) {
+            return;
+        }
+
         streaks.add(value.getValue());
-        this.seq = value.getValue().getSeq();
     }
 
     @Override
@@ -85,16 +91,19 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
         if (mark.getTimestamp() > 1898553600000L) {
             return;
         }
+
+        lastWatermark = mark.getTimestamp();
+
         List<TopKStreaks> topKStreaks = calculate(streaks.get(), mark.getTimestamp());
+
         resultBuilder.clear();
         ResultQ2 result = resultBuilder
                 .addAllHistogram(topKStreaks)
-                .setBatchSeqId(seq)//seqCounter++) // TODO: FIX THIS!
+                .setBatchSeqId(seqCounter++)
                 .setBenchmarkId(benchmarkId)
                 .build();
 
         challengeClient.resultQ2(result);
-        streaks.clear();
     }
 
     private int getBucketSize(long watermarkTimestamp) {
@@ -104,19 +113,28 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
         return (int) Math.min(bucketSize, maxBucketSize);
     }
 
-    private List<TopKStreaks> calculate(Iterable<Streak> streaks, long watermarkTimestamp) {
+    private List<TopKStreaks> calculate(Iterable<Streak> streaks, long watermarkTimestamp) throws Exception {
         int bucketSize = getBucketSize(watermarkTimestamp);
         Map<Integer, Integer> streaksPerBucket = new HashMap<>();
+        List<Streak> streaksToKeep = new ArrayList<>();
 
         for (Streak streak : streaks) {
+            // early streak should be kept in state until later watermark
+            if (streak.getTimestampLastMeasurement() > watermarkTimestamp) {
+                streaksToKeep.add(streak);
+                continue;
+            }
             int bucket = streak.getBucket(watermarkTimestamp, bucketSize);
             Integer count = streaksPerBucket.get(bucket);
             streaksPerBucket.put(bucket, count != null ? count + 1 : 1);
         }
+
+        this.streaks.update(streaksToKeep);
+
         int totalStreaks = streaksPerBucket.values().stream().mapToInt(Integer::intValue).sum();
 
         List<TopKStreaks> topKStreaks = new ArrayList<>(14);
-        //System.out.println("Batch: " + watermarkTimestamp);
+
         for (int i = 0; i < 14; i++) {
             Integer numberOfStreaks = streaksPerBucket.get(i);
             int percent;
@@ -125,7 +143,7 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
             } else {
                 percent = Math.round((float) numberOfStreaks / totalStreaks * 1000);
             }
-            //System.out.println(i + ":" + " from: " + i * bucketSize + " to: " + (i + 1) * bucketSize + " percent: " + percent);
+
             topKStreaksBuilder.clear();
             TopKStreaks streak = topKStreaksBuilder
                     .setBucketFrom(i * bucketSize)

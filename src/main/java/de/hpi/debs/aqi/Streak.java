@@ -25,6 +25,10 @@ public class Streak implements Serializable {
         return seq;
     }
 
+    public long getTimestampLastMeasurement() {
+        return timestampLastMeasurement;
+    }
+
     public void updateSeq(long seq) {
         this.seq = seq;
     }
