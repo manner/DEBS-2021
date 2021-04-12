@@ -62,19 +62,17 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
             }
 
             while (i < size && aqi.getTimestamp() <= wm) {
+                streak.setTimestampLastMeasurement(aqi.getTimestamp());
+                streak.updateSeq(aqi.getSeq());
                 if (aqi.isGood()) {
-                    if (streak.isBadStreak())
+                    if (streak.isBadStreak()) {
                         streak.startStreak(aqi.getTimestamp());
-
-                    streak.setTimestampLastMeasurement(aqi.getTimestamp());
-                    streak.updateSeq(aqi.getSeq());
-
-                    out.collect(streak);
+                    }
                 } else {
                     streak.fail();
-
-                    if (aqi.isWatermark()) // send empty watermark to handle seq over
-                        out.collect(streak);
+                }
+                if (aqi.isWatermark()) {
+                    out.collect(streak);
                 }
 
                 i++;
