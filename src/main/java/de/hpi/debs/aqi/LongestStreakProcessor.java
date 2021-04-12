@@ -39,12 +39,15 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
             return true;
         }
 
-        @Override
-        public AQIValue24h remove(int index) {
-            for (int i = 0; i <= index; i++)
-                super.remove(0);
+        public int clean(int index) {
+            int count = 0;
 
-            return null;
+            for (int i = 0; i <= index; i++) {
+                super.remove(0);
+                count++;
+            }
+
+            return count;
         }
 
         public void emitUntilWatermark(long wm, Collector<Streak> out) {
@@ -69,9 +72,11 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
                 } else {
                     streak.fail();
                 }
+
                 if (aqi.isWatermark()) {
                     out.collect(streak);
-                    this.remove(i);
+                    i -= this.clean(i);
+                    size = this.size();
                 }
 
                 i++;
