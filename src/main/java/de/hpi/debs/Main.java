@@ -1,22 +1,14 @@
 package de.hpi.debs;
 
+import de.hpi.debs.aqi.*;
 import de.hpi.debs.source.*;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.windowing.assigners.GlobalWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
 import com.google.protobuf.Empty;
 import com.twitter.chill.protobuf.ProtobufSerializer;
-import de.hpi.debs.aqi.AQIImprovement;
-import de.hpi.debs.aqi.AQIImprovementProcessor;
-import de.hpi.debs.aqi.AQITop50ImprovementsOperator;
-import de.hpi.debs.aqi.AQIValue24h;
-import de.hpi.debs.aqi.AQIValue24hProcessOperator;
-import de.hpi.debs.aqi.AQIValue5d;
-import de.hpi.debs.aqi.AQIValue5dProcessOperator;
-import de.hpi.debs.aqi.LongestStreakProcessor;
 import de.hpi.debs.serializer.LocationSerializer;
 import de.tum.i13.bandency.Batch;
 import de.tum.i13.bandency.Benchmark;
@@ -105,18 +97,18 @@ public class Main {
 
         DataStream<MeasurementOwn> cities;
 
-        if (NR_OF_BATCHES < 0)
-            cities = env.fromSource(
-                    new SourceOwn(benchmark, locations),
-                    new WatermarkStrategyOwn(),
-                    "BatchSource"
-            );
-        else
+        if (0 < NR_OF_BATCHES)
             cities = env.fromSource(
                     new SourceOwn(benchmark, locations, NR_OF_BATCHES),
                     new WatermarkStrategyOwn(),
                     "BatchSource"
             ).setParallelism(1);
+        else
+        cities = env.fromSource(
+                new SourceOwn(benchmark, locations),
+                new WatermarkStrategyOwn(),
+                "BatchSource"
+        );
 
         DataStream<MeasurementOwn> lastYearCities = cities.filter(MeasurementOwn::isLastYear);
         DataStream<MeasurementOwn> currentYearCities = cities.filter(MeasurementOwn::isCurrentYear);
@@ -166,10 +158,11 @@ public class Main {
                         new AQITop50ImprovementsOperator(benchmark.getId())
                 );
 
-
-        aqiStreamCurrentYear
+        DataStream<Streak> longestStreak = aqiStreamCurrentYear
                 .keyBy(AQIValue24h::getCity)
-                .process(new LongestStreakProcessor())
+                .process(new LongestStreakProcessor()).setParallelism(PARALLELISM);
+
+        longestStreak
                 .transform(
                         "histogram",
                         TypeInformation.of(Void.class),
