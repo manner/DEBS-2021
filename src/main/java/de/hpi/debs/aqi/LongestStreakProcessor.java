@@ -27,7 +27,7 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
             int index = this.size() - 1;
 
             if (index < 0)
-                return this.add(value);
+                return super.add(value);
 
             while (0 <= index && value.getTimestamp() < this.get(index).getTimestamp()) {
                 --index;
