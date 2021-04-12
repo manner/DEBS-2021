@@ -78,6 +78,7 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
                 }
 
                 i++;
+                aqi = this.get(i);
             }
 
             lastWatermark = wm;
