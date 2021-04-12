@@ -21,10 +21,10 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement, Void> {
-    private long seq;
     private static final int limit = 50;
     private final long benchmarkId;
     protected ListState<AQIImprovement> improvementsState;
+    private long lastWatermark;
     private int seqCounter;
     private ChallengerGrpc.ChallengerFutureStub challengeClient;
     private ManagedChannel channel;
@@ -38,9 +38,9 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
                 // do nothing as we are doing everything in the operator
             }
         });
-        this.seq = 0;
         this.benchmarkId = benchmarkId;
         this.seqCounter = 0;
+        this.lastWatermark = Long.MIN_VALUE;
     }
 
     @Override
@@ -72,9 +72,19 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
 
     @Override
     public void processElement(StreamRecord<AQIImprovement> value) throws Exception {
-        // TODO: Handle early elements and store them and discard late events
-        improvementsState.add(value.getValue());
-        seq = value.getValue().getSeq();
+        AQIImprovement improvement = value.getValue();
+
+        // late events should be discarded
+        if (improvement.getTimestamp() < lastWatermark) {
+            return;
+        }
+
+        // window for improvement didn't have any events in it
+        if (improvement.isWatermark() && improvement.getImprovement() < 0) {
+            return;
+        }
+
+        improvementsState.add(improvement);
     }
 
     @Override
@@ -83,10 +93,19 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
         if (mark.getTimestamp() > 1898553600000L) {
             return;
         }
+        lastWatermark = mark.getTimestamp();
+
         List<AQIImprovement> top50Improvements = StreamSupport.stream(improvementsState.get().spliterator(), false)
+                .filter(aqiImprovement -> aqiImprovement.getSeq() == seqCounter)
                 .sorted(Comparator.comparingDouble(AQIImprovement::getImprovement).reversed())
                 .limit(limit)
                 .collect(Collectors.toList());
+
+        improvementsState.update(
+                StreamSupport.stream(improvementsState.get().spliterator(), false)
+                        .filter(aqiImprovement -> aqiImprovement.getSeq() > seqCounter)
+                        .collect(Collectors.toList())
+        );
 
         List<TopKCities> topKCities = new ArrayList<>();
         for (int i = 0; i < top50Improvements.size(); i++) {
@@ -105,12 +124,11 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
         resultBuilder.clear();
         ResultQ1 result = resultBuilder
                 .addAllTopkimproved(topKCities)
-                .setBatchSeqId(seq)//seqCounter++)
+                .setBatchSeqId(seqCounter++)
                 .setBenchmarkId(benchmarkId)
                 .build();
 
         challengeClient.resultQ1(result);
-        improvementsState.clear();
     }
 
     private int roundAndMultiply(double value) {
