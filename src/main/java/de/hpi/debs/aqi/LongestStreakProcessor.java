@@ -1,48 +1,120 @@
 package de.hpi.debs.aqi;
 
+import de.hpi.debs.slicing.AqiWindowState;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
-import org.apache.flink.api.common.time.Time;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.util.Collector;
 
-import java.io.Serializable;
-import java.util.Optional;
+import java.util.ArrayList;
 
 public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValue24h, Streak> {
-    private ValueState<Streak> streakValueState;
+    class StreakState extends ArrayList<AQIValue24h> {
+        protected long lastWatermark;
+        protected int checkpoint;
+        protected Streak streak;
+
+        public StreakState(long seq, String city) {
+            super();
+
+            checkpoint = -1;
+            lastWatermark = 0;
+            streak = new Streak(seq, city);
+        }
+
+        @Override
+        public boolean add(AQIValue24h value) {
+            int index = this.size() - 1;
+
+            if (index < 0)
+                return this.add(value);
+
+            while (0 <= index && value.getTimestamp() < this.get(index).getTimestamp()) {
+                --index;
+            }
+
+            if (index < 0)
+                index = 0;
+
+            this.add(index, value);
+
+            return true;
+        }
+
+        @Override
+        public AQIValue24h remove(int index) {
+            if (index <= checkpoint)
+                checkpoint--;
+
+            return super.remove(index);
+        }
+
+        public void emitUntilWatermark(long wm, Collector<Streak> out) {
+            int i = checkpoint + 1;
+            int size = this.size();
+            AQIValue24h aqi;
+
+            if (i < size) {
+                aqi = this.get(i);
+            } else {
+                lastWatermark = wm;
+                return;
+            }
+
+            while (i < size && aqi.getTimestamp() <= wm) {
+                if (aqi.isGood()) {
+                    if (streak.isBadStreak())
+                        streak.startStreak(aqi.getTimestamp());
+
+                    streak.setTimestampLastMeasurement(aqi.getTimestamp());
+
+                    out.collect(streak);
+                } else {
+                    streak.fail();
+
+                    if (aqi.isWatermark()) // send empty watermark to handle seq over
+                        out.collect(new Streak(aqi.getSeq(), aqi.getCity()));
+                }
+                
+                i++;
+            }
+
+            lastWatermark = wm;
+        }
+
+        public int getCheckpoint() {
+            return checkpoint;
+        }
+
+        public long getLastWatermark() {
+            return lastWatermark;
+        }
+    }
+
+    private ValueState<StreakState> state;
 
     @Override
     public void open(Configuration parameters) {
-        streakValueState = getRuntimeContext().getState(new ValueStateDescriptor<>("streak", Streak.class));
+        state = getRuntimeContext().getState(new ValueStateDescriptor<>("streakState", StreakState.class));
     }
 
     @Override
-    public void processElement(AQIValue24h aqiValue, Context ctx, Collector<Streak> out) throws Exception {
-        // TODO: Handle early elements and store them and discard late events
-        Streak streak = streakValueState.value();
+    public void processElement(AQIValue24h value, Context ctx, Collector<Streak> out) throws Exception {
+        StreakState window = state.value();
 
-        if (streak == null) {
-            streak = new Streak(aqiValue.getSeq(), aqiValue.getCity());
-            streakValueState.update(streak);
-        } else {
-            streak.updateSeq(aqiValue.getSeq());
+        if (window != null && value.getTimestamp() < window.getLastWatermark()) // ignore late events
+            return;
+
+        if (window == null) {
+            window = new StreakState(-1, ctx.getCurrentKey());
         }
 
-        if (aqiValue.isGood()) {
-            if (streak.isBadStreak()) {
-                streak.startStreak(aqiValue.getTimestamp());
-            }
-        } else {
-            streak.fail();
-        }
+        window.add(value);
 
-        streak.setTimestampLastMeasurement(aqiValue.getTimestamp());
-        streakValueState.update(streak);
+        if (value.isWatermark())
+            window.emitUntilWatermark(value.getTimestamp(), out);
 
-        if (aqiValue.isWatermark()) {
-            out.collect(streak);
-        }
+        state.update(window);
     }
 }
