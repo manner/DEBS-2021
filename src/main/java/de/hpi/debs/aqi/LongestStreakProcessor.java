@@ -1,6 +1,5 @@
 package de.hpi.debs.aqi;
 
-import de.hpi.debs.slicing.AqiWindowState;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.configuration.Configuration;
@@ -76,7 +75,7 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
                     if (aqi.isWatermark()) // send empty watermark to handle seq over
                         out.collect(new Streak(aqi.getSeq(), aqi.getCity()));
                 }
-                
+
                 i++;
             }
 
