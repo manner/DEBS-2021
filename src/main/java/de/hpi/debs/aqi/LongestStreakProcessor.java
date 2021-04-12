@@ -11,13 +11,11 @@ import java.util.ArrayList;
 public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValue24h, Streak> {
     class StreakState extends ArrayList<AQIValue24h> {
         protected long lastWatermark;
-        protected int checkpoint;
         protected Streak streak;
 
         public StreakState(long seq, String city) {
             super();
 
-            checkpoint = -1;
             lastWatermark = 0;
             streak = new Streak(seq, city);
         }
@@ -43,14 +41,14 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
 
         @Override
         public AQIValue24h remove(int index) {
-            if (index <= checkpoint)
-                checkpoint--;
+            for (int i = 0; i < index; i++)
+                super.remove(0);
 
-            return super.remove(index);
+            return null;
         }
 
         public void emitUntilWatermark(long wm, Collector<Streak> out) {
-            int i = checkpoint + 1;
+            int i = 0;
             int size = this.size();
             AQIValue24h aqi;
 
@@ -73,6 +71,7 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
                 }
                 if (aqi.isWatermark()) {
                     out.collect(streak);
+                    this.remove(i);
                 }
 
                 i++;
@@ -80,10 +79,6 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
             }
 
             lastWatermark = wm;
-        }
-
-        public int getCheckpoint() {
-            return checkpoint;
         }
 
         public long getLastWatermark() {
