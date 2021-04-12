@@ -86,15 +86,15 @@ fi
 mainIP="192.168.1.27"
 # cluster ports
 jobmanagerPort=10017
-ports="$jobmanagerPort 10018 10019 10020 10021" # 10022 10023 10024 10025" # last need to be client that runs jar
+ports="$jobmanagerPort 10018 10019 10020 10021 10022 10023 10024 10025" # last need to be client that runs jar
 # all editable parameters
 debsApiKey="$DEBS_API_KEY"
 checkpointingInterval=0 # 180000
-parallelism=25
+parallelism=9
 numberOfNodes=0
 numberOfTaskSlots=0 # 0 for auto computation
 batchSize=10000
-nrOfBatches="-1"
+nrOfBatches=0
 benchmarkType="Evaluation"
 benchmarkNamePrefix="cluster test run "
 for i in $ports; do
@@ -151,7 +151,7 @@ if [ "$deployJar" = "true" ]; then
     exit 0
   fi
 else
-  echo "Skipped deploying jar as it could not be fund under $scriptDir/build/libs/DEBS-2021-1.0-SNAPSHOT-all.jar"
+  echo "Skipped deploying jar"
 fi
 
 if [ "$run" = "true" ]; then
