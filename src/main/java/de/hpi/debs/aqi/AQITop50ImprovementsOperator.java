@@ -92,9 +92,11 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
                 .limit(limit)
                 .collect(Collectors.toList());
 
+        List<AQIImprovement> clearMem = improvementsState;
         improvementsState = improvementsState.stream()
                         .filter(aqiImprovement -> aqiImprovement.getSeq() > seqCounter)
                         .collect(Collectors.toList());
+        clearMem.clear();
 
         List<TopKCities> topKCities = new ArrayList<>();
         for (int i = 0; i < top50Improvements.size(); i++) {

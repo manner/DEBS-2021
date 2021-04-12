@@ -122,7 +122,9 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
             streaksPerBucket.put(bucket, count != null ? count + 1 : 1);
         }
 
+        List<Streak> tmp = this.streaks;
         this.streaks = streaksToKeep;
+        tmp.clear();
 
         int totalStreaks = streaksPerBucket.values().stream().mapToInt(Integer::intValue).sum();
 
