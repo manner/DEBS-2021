@@ -10,8 +10,6 @@ import org.apache.flink.api.connector.source.SourceReader;
 import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.core.io.InputStatus;
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
 import java.io.IOException;
@@ -87,6 +85,8 @@ public class SourceReaderOwn implements SourceReader<MeasurementOwn, SourceSplit
         List<Measurement> lastYearList = batch.getLastyearList();
         Measurement lastMeasurement;
         long watermarkTimestamp;
+        if (currentYearList.isEmpty() && lastYearList.isEmpty())
+            return;
         if (currentYearList.isEmpty()) {
             lastMeasurement = lastYearList.get(lastYearList.size() - 1);
             watermarkTimestamp = lastMeasurement.getTimestamp().getSeconds() * 1000;
