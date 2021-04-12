@@ -41,7 +41,7 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
 
         @Override
         public AQIValue24h remove(int index) {
-            for (int i = 0; i < index; i++)
+            for (int i = 0; i <= index; i++)
                 super.remove(0);
 
             return null;
