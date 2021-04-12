@@ -74,7 +74,7 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
                     streak.fail();
 
                     if (aqi.isWatermark()) // send empty watermark to handle seq over
-                        out.collect(new Streak(aqi.getSeq(), aqi.getCity()));
+                        out.collect(streak);
                 }
 
                 i++;
