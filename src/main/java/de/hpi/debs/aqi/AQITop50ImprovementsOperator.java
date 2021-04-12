@@ -38,6 +38,7 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
         this.benchmarkId = benchmarkId;
         this.seqCounter = 0;
         this.lastWatermark = Long.MIN_VALUE;
+        this.improvementsState = new ArrayList<>();
     }
 
     @Override
