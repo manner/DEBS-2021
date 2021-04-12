@@ -1,7 +1,5 @@
 package de.hpi.debs;
 
-import org.apache.flink.api.common.state.ListState;
-import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.operators.ProcessOperator;
@@ -27,7 +25,7 @@ import java.util.Map;
 public class HistogramOperator extends ProcessOperator<Streak, Void> {
 
     private final long benchmarkId;
-    protected ListState<Streak> streaks;
+    protected List<Streak> streaks;
     private int seqCounter;
     private ChallengerGrpc.ChallengerFutureStub challengeClient;
     private ManagedChannel channel;
@@ -49,12 +47,6 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
 
     @Override
     public void open() throws Exception {
-        ListStateDescriptor<Streak> descriptor =
-                new ListStateDescriptor<>(
-                        "streaks",
-                        Streak.class);
-
-        streaks = getOperatorStateBackend().getListState(descriptor);
         channel = ManagedChannelBuilder
                 .forAddress("challenge.msrg.in.tum.de", 5023)
                 .usePlaintext()
@@ -94,7 +86,7 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
 
         lastWatermark = mark.getTimestamp();
 
-        List<TopKStreaks> topKStreaks = calculate(streaks.get(), mark.getTimestamp());
+        List<TopKStreaks> topKStreaks = calculate(streaks, mark.getTimestamp());
 
         resultBuilder.clear();
         ResultQ2 result = resultBuilder
@@ -113,7 +105,7 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
         return (int) Math.min(bucketSize, maxBucketSize);
     }
 
-    private List<TopKStreaks> calculate(Iterable<Streak> streaks, long watermarkTimestamp) throws Exception {
+    private List<TopKStreaks> calculate(Iterable<Streak> streaks, long watermarkTimestamp) {
         int bucketSize = getBucketSize(watermarkTimestamp);
         Map<Integer, Integer> streaksPerBucket = new HashMap<>();
         List<Streak> streaksToKeep = new ArrayList<>();
@@ -129,7 +121,7 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
             streaksPerBucket.put(bucket, count != null ? count + 1 : 1);
         }
 
-        this.streaks.update(streaksToKeep);
+        this.streaks = streaksToKeep;
 
         int totalStreaks = streaksPerBucket.values().stream().mapToInt(Integer::intValue).sum();
 
