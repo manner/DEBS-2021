@@ -1,7 +1,5 @@
 package de.hpi.debs.aqi;
 
-import org.apache.flink.api.common.state.ListState;
-import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.operators.ProcessOperator;
 import org.apache.flink.streaming.api.watermark.Watermark;
@@ -18,12 +16,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement, Void> {
     private static final int limit = 50;
     private final long benchmarkId;
-    protected ListState<AQIImprovement> improvementsState;
+    protected List<AQIImprovement> improvementsState;
     private long lastWatermark;
     private int seqCounter;
     private ChallengerGrpc.ChallengerFutureStub challengeClient;
@@ -45,13 +42,6 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
 
     @Override
     public void open() throws Exception {
-        ListStateDescriptor<AQIImprovement> descriptor =
-                new ListStateDescriptor<>(
-                        "improvements",
-                        AQIImprovement.class);
-
-        improvementsState = getOperatorStateBackend().getListState(descriptor);
-
         channel = ManagedChannelBuilder
                 .forAddress("challenge.msrg.in.tum.de", 5023)
                 .usePlaintext()
@@ -88,24 +78,22 @@ public class AQITop50ImprovementsOperator extends ProcessOperator<AQIImprovement
     }
 
     @Override
-    public void processWatermark(Watermark mark) throws Exception {
+    public void processWatermark(Watermark mark) {
         // Fix to avoid weird watermark in year 292278994
         if (mark.getTimestamp() > 1898553600000L) {
             return;
         }
         lastWatermark = mark.getTimestamp();
 
-        List<AQIImprovement> top50Improvements = StreamSupport.stream(improvementsState.get().spliterator(), false)
+        List<AQIImprovement> top50Improvements = improvementsState.stream()
                 .filter(aqiImprovement -> aqiImprovement.getSeq() == seqCounter)
                 .sorted(Comparator.comparingDouble(AQIImprovement::getImprovement).reversed())
                 .limit(limit)
                 .collect(Collectors.toList());
 
-        improvementsState.update(
-                StreamSupport.stream(improvementsState.get().spliterator(), false)
+        improvementsState = improvementsState.stream()
                         .filter(aqiImprovement -> aqiImprovement.getSeq() > seqCounter)
-                        .collect(Collectors.toList())
-        );
+                        .collect(Collectors.toList());
 
         List<TopKCities> topKCities = new ArrayList<>();
         for (int i = 0; i < top50Improvements.size(); i++) {
