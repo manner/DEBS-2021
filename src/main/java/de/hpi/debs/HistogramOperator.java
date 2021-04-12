@@ -78,7 +78,7 @@ public class HistogramOperator extends ProcessOperator<Streak, Void> {
     }
 
     @Override
-    public void processWatermark(Watermark mark) throws Exception {
+    public void processWatermark(Watermark mark) {
         // Fix to avoid weird watermark in year 292278994
         if (mark.getTimestamp() > 1898553600000L) {
             return;
