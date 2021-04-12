@@ -67,6 +67,7 @@ public class LongestStreakProcessor extends KeyedProcessFunction<String, AQIValu
                         streak.startStreak(aqi.getTimestamp());
 
                     streak.setTimestampLastMeasurement(aqi.getTimestamp());
+                    streak.updateSeq(aqi.getSeq());
 
                     out.collect(streak);
                 } else {
