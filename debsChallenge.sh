@@ -86,10 +86,10 @@ fi
 mainIP="192.168.1.27"
 # cluster ports
 jobmanagerPort=10017
-ports="$jobmanagerPort 10018 10019" # 10020 10021 10022 10023 10024 10025" # last need to be client that runs jar
+ports="$jobmanagerPort 10018 10019 10020 10021" # 10022 10023 10024 10025" # last need to be client that runs jar
 # all editable parameters
 debsApiKey="$DEBS_API_KEY"
-checkpointingInterval="-1" # 180000
+checkpointingInterval=0 # 180000
 parallelism=25
 numberOfNodes=0
 numberOfTaskSlots=0 # 0 for auto computation
