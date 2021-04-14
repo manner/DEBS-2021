@@ -1,5 +1,7 @@
 package de.hpi.debs.aqi;
 
+import de.hpi.debs.MeasurementOwn;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -87,5 +89,8 @@ public class AQICalculator {
 
     public static int getAQI(float PM25, float PM10) {
         return Math.max(getAQI25(PM25), getAQI10(PM10));
+    }
+    public static int getAQI(MeasurementOwn measurement) {
+        return getAQI(measurement.getP2(), measurement.getP1());
     }
 }

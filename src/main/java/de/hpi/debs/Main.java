@@ -118,7 +118,8 @@ public class Main {
                 .transform(
                         "AQIValue24hProcessOperator",
                         TypeInformation.of(AQIValue24h.class),
-                        new AQIValue24hProcessOperator(currentStart)
+                        new AQI24hSimpleOperator()
+//                        new AQIValue24hProcessOperator(currentStart)
                 ).setParallelism(PARALLELISM);
 
         DataStream<AQIValue24h> aqiStreamLastYear = lastYearCities
