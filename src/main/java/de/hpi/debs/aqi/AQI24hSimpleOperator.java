@@ -2,6 +2,8 @@ package de.hpi.debs.aqi;
 
 import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.api.common.state.ListStateDescriptor;
+import org.apache.flink.api.common.state.ValueState;
+import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.operators.KeyedProcessOperator;
@@ -18,8 +20,9 @@ import java.util.List;
 
 public class AQI24hSimpleOperator extends KeyedProcessOperator<String, MeasurementOwn, AQIValue24h> {
     private final static long FIVE_MINUTES = Time.minutes(5).toMilliseconds();
+    private final long currentStart = LocalDateTime.of(2020, Month.MARCH, 1, 0, 0).toEpochSecond(ZoneOffset.UTC) * 1000;
     private ListState<MeasurementOwn> measurements;
-    private long snapshotTime;
+    private ValueState<Long> snapshotTimeValue;
 
     public AQI24hSimpleOperator() {
         super(new KeyedProcessFunction<>() {
@@ -28,8 +31,6 @@ public class AQI24hSimpleOperator extends KeyedProcessOperator<String, Measureme
                 // do nothing as we are doing everything in the operator
             }
         });
-        long currentStart = LocalDateTime.of(2020, Month.APRIL, 1, 0, 0).toEpochSecond(ZoneOffset.UTC) * 1000;
-        this.snapshotTime = currentStart + FIVE_MINUTES;
     }
 
     @Override
@@ -38,19 +39,23 @@ public class AQI24hSimpleOperator extends KeyedProcessOperator<String, Measureme
                 new ListStateDescriptor<>(
                         "measurements",
                         MeasurementOwn.class);
-
         measurements = getRuntimeContext().getListState(descriptor);
+
+        snapshotTimeValue = getRuntimeContext().getState(new ValueStateDescriptor<>("snapshotTime", Long.class, currentStart + FIVE_MINUTES));
     }
 
     @Override
     public void processElement(StreamRecord<MeasurementOwn> value) throws Exception {
         MeasurementOwn measurement = value.getValue();
+        long snapshotTime = snapshotTimeValue.value();
 
         // emit when 5min snapshot has passed
         if (measurement.getTimestamp() > snapshotTime) {
             AQIValue24h aqiValue24h = calculateAQIFor24hBefore(snapshotTime, false);
-            output.collect(new StreamRecord<>(aqiValue24h, snapshotTime));
-            snapshotTime += FIVE_MINUTES;
+            if (aqiValue24h != null) {
+                output.collect(new StreamRecord<>(aqiValue24h, snapshotTime));
+            }
+            snapshotTimeValue.update(snapshotTime + FIVE_MINUTES);
         }
 
         measurements.add(measurement);
@@ -100,15 +105,7 @@ public class AQI24hSimpleOperator extends KeyedProcessOperator<String, Measureme
                     end,
                     isWatermark,
                     lastMeasurement.getCity());
-        } else {
-            return new AQIValue24h(
-                    lastMeasurement.getSeq(),
-                    -1,
-                    (int) lastMeasurement.getP1(),
-                    (int) lastMeasurement.getP2(),
-                    end,
-                    isWatermark,
-                    lastMeasurement.getCity());
         }
+        return null;
     }
 }
