@@ -33,7 +33,7 @@ export PATH=$PATH:/opt/idea-IC-203.7148.57/bin
    `src/java/main/de/hpi/debs/Main.java` in the `Project` window. One can run the
    main class by right clicking into the file and selecting `Run Main.main()`.
 
-### Usage
+## Usage
 Our solution for the DEBS 2021 Grand Challenge is developed ontop of Flink. There are
 several options to run the solution. In any case you will need to setup several
 environment variables to run the soluton successfully. An example of environment
@@ -49,7 +49,7 @@ you like to receive and a value of 0 disables. When `NR_OF_BATCHES` is disabled 
 solution will continue to request new batches until the final batchs is received.
 The batches contain a flag which determines wether or not it is the final batch.
 
-## Stand Alone Execution on a Cluster
+### Stand Alone Execution on a Cluster
 To run our solution on a real cluster we need first to setup the cluster. First, each
 node needs to install Flink and start the taskmanager. Additionally, one node needs
 to start the jobmanager.
