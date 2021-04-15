@@ -49,7 +49,7 @@ public class AQI24hSimpleOperator extends KeyedProcessOperator<String, Measureme
         // emit when 5min snapshot has passed
         if (measurement.getTimestamp() > snapshotTime) {
             AQIValue24h aqiValue24h = calculateAQIFor24hBefore(snapshotTime, false);
-            output.collect(new StreamRecord<>(aqiValue24h));
+            output.collect(new StreamRecord<>(aqiValue24h, snapshotTime));
             snapshotTime += FIVE_MINUTES;
         }
 
@@ -58,7 +58,7 @@ public class AQI24hSimpleOperator extends KeyedProcessOperator<String, Measureme
         // emit when internal watermark
         if (measurement.isWatermark()) {
             AQIValue24h aqiValue24h = calculateAQIFor24hBefore(measurement.getTimestamp(), true);
-            output.collect(new StreamRecord<>(aqiValue24h));
+            output.collect(new StreamRecord<>(aqiValue24h, measurement.getTimestamp()));
         }
     }
 
