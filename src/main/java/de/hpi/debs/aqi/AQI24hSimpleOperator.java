@@ -80,16 +80,20 @@ public class AQI24hSimpleOperator extends KeyedProcessOperator<String, Measureme
                 continue;
             }
             newMeasurements.add(measurement);
+
             // measurements that are in the future shouldn't count towards average
             if (measurement.getTimestamp() > end) {
                 continue;
             }
 
-            if (!measurement.isWatermark()) {
-                lastMeasurement = measurement;
-                counter++;
-                sumAQI += AQICalculator.getAQI(measurement);
+            // watermarks in MeasurementOwn don't have any real data, so they shouldn't count
+            if (measurement.isWatermark()) {
+                continue;
             }
+
+            lastMeasurement = measurement;
+            counter++;
+            sumAQI += AQICalculator.getAQI(measurement);
         }
 
         // Discard measurements older than 24h
