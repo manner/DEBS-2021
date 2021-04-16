@@ -1,5 +1,6 @@
 package de.hpi.debs.aqi;
 
+import de.hpi.debs.slicing.AqiSlice;
 import de.hpi.debs.slicing.AqiWindowState;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
@@ -132,10 +133,12 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
                 curWindowEnd = window.getEndOfSlice(i);
             }
 
+            AqiSlice slice = window.getAqiSlice(i);
+
             // emit watermark with current 24h averages
             output.collect(new StreamRecord<>(new AQIValue5d(
                     value.getValue().getSeq(),
-                    value.getValue().getAqi(),
+                    slice.getWindowAvg(),
                     value.getValue().getAqiP1(),
                     value.getValue().getAqiP2(),
                     wm,
