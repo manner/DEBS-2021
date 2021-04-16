@@ -110,7 +110,7 @@ public class SourceReaderOwn implements SourceReader<MeasurementOwn, SourceSplit
             if (city.equals(NOT_AVAILABLE)) {
                 continue;
             }
-            MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, 0, city);
+            MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, batch.getSeqId(), city);
 
             Long lastTimestamp = cities.get(city);
             if (lastTimestamp == null) {
@@ -131,7 +131,7 @@ public class SourceReaderOwn implements SourceReader<MeasurementOwn, SourceSplit
             if (city.equals(NOT_AVAILABLE)) {
                 continue;
             }
-            MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, 0, city, A_YEAR, true);
+            MeasurementOwn m = MeasurementOwn.fromMeasurement(measurement, batch.getSeqId(), city, A_YEAR, true);
 
             Long lastTimestamp = lastYearCities.get(city);
             if (lastTimestamp == null) {
@@ -156,7 +156,7 @@ public class SourceReaderOwn implements SourceReader<MeasurementOwn, SourceSplit
                 } else {
                     notFirst = true;
                 }
-                watermark = new MeasurementOwn(0, 0, 0, 0, 0, watermarkTimestamp, city.getKey(), true, false);
+                watermark = new MeasurementOwn(batch.getSeqId(), 0, 0, 0, 0, watermarkTimestamp, city.getKey(), true, false);
             }
         }
 
@@ -171,7 +171,7 @@ public class SourceReaderOwn implements SourceReader<MeasurementOwn, SourceSplit
                 } else {
                     notFirst = true;
                 }
-                watermark = new MeasurementOwn(0, 0, 0, 0, 0, watermarkTimestamp, city.getKey(), true, true);
+                watermark = new MeasurementOwn(batch.getSeqId(), 0, 0, 0, 0, watermarkTimestamp, city.getKey(), true, true);
             }
         }
 
