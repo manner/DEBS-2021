@@ -17,7 +17,6 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
     public long step;
     public long doubleStep;
     public int vDeltaIdx;
-    boolean addOneYear;
 
     public AQIValue5dProcessOperator(long start) {
         super(
@@ -29,7 +28,6 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
                 }
         );
 
-        this.addOneYear = false;
         this.start = start;
         this.size = 432000000;
         this.step = 300000;
@@ -37,23 +35,6 @@ public class AQIValue5dProcessOperator extends KeyedProcessOperator<String, AQIV
         this.vDeltaIdx = (int)(size / step) - 1;
     }
 
-    public AQIValue5dProcessOperator(long start, boolean addOneYear) {
-        super(
-            new KeyedProcessFunction<>() {
-                @Override
-                public void processElement(AQIValue24h value, Context ctx, Collector<AQIValue5d> out) {
-                    // do nothing as we are doing everything in the operator
-                }
-            }
-        );
-
-        this.addOneYear = addOneYear;
-        this.start = start;
-        this.size = 432000000;
-        this.step = 300000;
-        this.doubleStep = 2 * step;
-        this.vDeltaIdx = (int)(size / step) - 1;
-    }
 
     public AQIValue5dProcessOperator(long start, long size, long step) {
         super(
