@@ -127,7 +127,8 @@ public class Main {
                 .transform(
                         "AQIValue24hProcessOperator",
                         TypeInformation.of(AQIValue24h.class),
-                        new AQIValue24hProcessOperator(currentStart)
+                        new AQI24hSimpleOperator()
+//                        new AQIValue24hProcessOperator(currentStart)
                 ).setParallelism(PARALLELISM);
 
         DataStream<AQIValue5d> fiveDayStreamCurrentYear = aqiStreamCurrentYear // need more attributes
@@ -135,7 +136,8 @@ public class Main {
                 .transform(
                         "AQIValue5dProcessOperator",
                         TypeInformation.of(AQIValue5d.class),
-                        new AQIValue5dProcessOperator(currentStart, false)
+                        new AQI5dSimpleOperator()
+//                        new AQIValue5dProcessOperator(currentStart)
                 ).setParallelism(PARALLELISM);
 
         DataStream<AQIValue5d> fiveDayStreamLastYear = aqiStreamLastYear // need more attributes
@@ -143,7 +145,8 @@ public class Main {
                 .transform(
                         "AQIValue5dProcessOperator",
                         TypeInformation.of(AQIValue5d.class),
-                        new AQIValue5dProcessOperator(currentStart, true)
+                        new AQI5dSimpleOperator()
+//                        new AQIValue5dProcessOperator(currentStart)
                 ).setParallelism(PARALLELISM);
 
         DataStream<AQIImprovement> fiveDayImprovement = fiveDayStreamCurrentYear
