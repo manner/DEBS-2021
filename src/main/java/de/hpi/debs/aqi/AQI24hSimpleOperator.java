@@ -71,7 +71,8 @@ public class AQI24hSimpleOperator extends KeyedProcessOperator<String, Measureme
         long start = end - Time.hours(24).toMilliseconds();
         List<MeasurementOwn> newMeasurements = new ArrayList<>();
         MeasurementOwn lastMeasurement = null;
-        long sumAQI = 0;
+        long sumP1 = 0;
+        long sumP2 = 0;
         long counter = 0;
 
         for (MeasurementOwn measurement : measurements.get()) {
@@ -93,17 +94,19 @@ public class AQI24hSimpleOperator extends KeyedProcessOperator<String, Measureme
 
             lastMeasurement = measurement;
             counter++;
-            sumAQI += AQICalculator.getAQI(measurement);
+            sumP1 += measurement.getP1();
+            sumP2 += measurement.getP2();
         }
 
         // Discard measurements older than 24h
         measurements.update(newMeasurements);
 
         if (counter > 0) {
-            int aqiValue = Math.round((float) sumAQI / counter);
+            float avgP1 = (float) sumP1 / counter;
+            float avgP2 = (float) sumP2 / counter;
             return new AQIValue24h(
                     lastMeasurement.getSeq(),
-                    aqiValue,
+                    AQICalculator.getAQI(avgP2, avgP1),
                     AQICalculator.getAQI10(lastMeasurement.getP1()),
                     AQICalculator.getAQI25(lastMeasurement.getP2()),
                     end,
